@@ -42,3 +42,7 @@ This environment will support the development of projects focused on:
 - Data Envelopment Analysis;
 - performance measurement and benchmarking;
 - NLP and LLM applications.
+
+## Status
+
+Local development environment successfully configured and validated.
