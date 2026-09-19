@@ -49,3 +49,39 @@ desktop.ini
 *.tmp
 *.temp
 *.log
+
+# ==============================
+# Analytical data
+# ==============================
+data/
+raw/
+downloaded/
+interim/
+cache/
+
+# ==============================
+# Geospatial / raster data
+# ==============================
+*.tif
+*.tiff
+*.gpkg
+*.geotiff
+
+# ==============================
+# Local analytical databases
+# ==============================
+*.duckdb
+*.duckdb.wal
+
+# ==============================
+# Generated analytical outputs
+# ==============================
+*.parquet
+*.feather
+
+# ==============================
+# Large archives
+# ==============================
+*.zip
+*.7z
+*.rar
