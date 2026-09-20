@@ -85,3 +85,6 @@ cache/
 *.zip
 *.7z
 *.rar
+
+# Project-specific virtual environments
+.venv*/
