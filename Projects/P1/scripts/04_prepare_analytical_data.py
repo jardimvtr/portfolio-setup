@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-SCRIPT 04 v4.0 — FINAL ANALYTICAL PREPARATION + COMMON-WEIGHT BoD
+SCRIPT 04 v4.1.1 — FINAL ANALYTICAL PREPARATION + COMMON-WEIGHT BoD + ANNUAL DECOMPOSITION
 
 Purpose
 -------
@@ -50,12 +50,23 @@ normalization/standardization. BoD estimation requires a defensible choice of:
 - normalization by the maximum (not Min-Max, not Z-score);
 - common-weight restrictions if the unrestricted solution degenerates.
 
-This revision applies the selected preprocessing rules and estimates the final BoD family scores.
+This revision applies the selected preprocessing rules, estimates one common BoD weight vector
+per normative family over the pooled analytical window, and preserves the annual decomposition of
+each family score into indicator-level weighted contributions.
 
 Current family principle
 ------------------------
 - Families with >=2 indicators and a defensible performance direction -> common-weight BoD candidate.
+- Dynamic common weights are estimated jointly over all region-year observations in 2015-2019 and
+  remain fixed across regions and years.
+- For each region-year and variable, the script stores: raw value, preprocessed/normalized value,
+  common BoD weight, weighted contribution, contribution share, and the reconstructed family score.
+- The annual family score is the sum of weighted contributions; no second normalization is applied
+  after the BoD aggregation.
 - Single-indicator families -> no BoD; retain the indicator directly.
+- The former demographic_scale_distribution family (population + density) is removed from the
+  clustering representation; WorldPop population remains available only where technically needed
+  as an upstream denominator/cross-check.
 - Multi-indicator non-normative structural families -> retain as a balanced structural block, not a normative BoD.
 - BoD aggregates within a family; it does not collapse all P1 dimensions into one global score.
 
@@ -171,6 +182,9 @@ PREPROCESSING_AUDIT_OUTPUT = SCRIPT04_DIR / "04_preprocessing_audit.csv"
 BOD_WEIGHTS_OUTPUT = SCRIPT04_DIR / "04_bod_common_weights.csv"
 BOD_FAMILY_SUMMARY_OUTPUT = SCRIPT04_DIR / "04_bod_family_summary.csv"
 BOD_PROCESSED_LONG_OUTPUT = SCRIPT04_DIR / "04_bod_processed_indicators_long.csv"
+BOD_WEIGHTED_CONTRIBUTIONS_OUTPUT = SCRIPT04_DIR / "04_bod_weighted_contributions_long.csv"
+BOD_DYNAMIC_DECOMPOSITION_OUTPUT = SCRIPT04_DIR / "04_bod_dynamic_decomposition_2015_2019.csv"
+BOD_STRUCTURAL_DECOMPOSITION_OUTPUT = SCRIPT04_DIR / "04_bod_structural_decomposition.csv"
 BOD_DYNAMIC_SCORES_OUTPUT = SCRIPT04_DIR / "04_bod_dynamic_scores.csv"
 BOD_STRUCTURAL_SCORES_OUTPUT = SCRIPT04_DIR / "04_bod_structural_scores.csv"
 FINAL_DYNAMIC_MODEL_OUTPUT = SCRIPT04_DIR / "04_final_dynamic_model_panel_2015_2019.csv"
@@ -207,22 +221,6 @@ DYNAMIC_FEATURES: dict[str, dict[str, Any]] = {
         "dea_direction": "INDESEJAVEL",
         "manual_status": "CANDIDATE",
         "description": "Share of the regional population aged 65 or older; treated as an undesirable dependency-pressure indicator before BoD.",
-    },
-
-    # Demographic scale/distribution — descriptive, non-normative.
-    "wp_age_population": {
-        "family": "demographic_scale_distribution",
-        "source": "WORLDPOP_AGESEX",
-        "dea_direction": "NAO_NORMATIVA",
-        "manual_status": "CANDIDATE",
-        "description": "Total regional population estimated from WorldPop age-sex rasters.",
-    },
-    "population_density_per_km2": {
-        "family": "demographic_scale_distribution",
-        "source": "WORLDPOP_AGESEX+GEOMETRY",
-        "dea_direction": "NAO_NORMATIVA",
-        "manual_status": "CANDIDATE",
-        "description": "Regional population per square kilometre.",
     },
 
     # Socioeconomic deprivation — normative family for common-weight BoD.
@@ -310,6 +308,15 @@ STRUCTURAL_FEATURES: dict[str, dict[str, Any]] = {
 
 # Variables intentionally removed from the active design.
 MANUAL_EXCLUSIONS = [
+    {
+        "variable": "wp_age_population,population_density_per_km2",
+        "reason": "DEMOGRAPHIC_SCALE_DISTRIBUTION_REMOVED_FROM_CLUSTERING",
+        "notes": (
+            "Population scale and population density are excluded from the final clustering feature space. "
+            "WorldPop population remains available upstream only as a denominator for NTL per capita and "
+            "for population cross-checks; density may remain in intermediate audit data but is not an active feature."
+        ),
+    },
     {
         "variable": "share_0_14",
         "reason": "REDUNDANT_WITH_PRODUCTIVE_AGE_SPECIFICATION",
@@ -1819,6 +1826,7 @@ def estimate_all_bod_families(
             temp["block"] = block
             temp["family"] = family
             temp["variable"] = variable
+            temp["value_raw"] = pd.to_numeric(frame[variable], errors="raise").to_numpy(dtype=float)
             temp["value_normalized"] = norm.to_numpy()
             processed_long_parts.append(temp)
 
@@ -1841,6 +1849,231 @@ def estimate_all_bod_families(
     )
 
 
+
+def build_bod_weighted_decomposition(
+    bod_processed_long: pd.DataFrame,
+    bod_weights: pd.DataFrame,
+    bod_dynamic_scores: pd.DataFrame,
+    bod_structural_scores: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Build auditable variable-level BoD decomposition without re-normalizing scores.
+
+    For every normative family observation:
+        weighted_contribution_{i,t,j} = value_normalized_{i,t,j} * common_weight_j
+
+    The family score is reconstructed as the sum of weighted contributions.
+    Dynamic common weights are constant across all regions and all years in 2015-2019.
+    No second normalization is applied after the BoD aggregation.
+    """
+    required_processed = {
+        "region_id", "code", "block", "family", "variable",
+        "value_raw", "value_normalized",
+    }
+    missing_processed = required_processed - set(bod_processed_long.columns)
+    if missing_processed:
+        raise ValueError(
+            "BoD processed-long table is missing columns required for decomposition: "
+            f"{sorted(missing_processed)}"
+        )
+
+    required_weights = {"block", "family", "variable", "weight_final"}
+    missing_weights = required_weights - set(bod_weights.columns)
+    if missing_weights:
+        raise ValueError(
+            "BoD weights table is missing columns required for decomposition: "
+            f"{sorted(missing_weights)}"
+        )
+
+    if bod_weights.duplicated(["block", "family", "variable"]).any():
+        raise ValueError("BoD common weights contain duplicated block-family-variable keys.")
+
+    weights = bod_weights[
+        ["block", "family", "variable", "weight_final", "final_model", "restriction_applied"]
+    ].copy()
+    weights = weights.rename(columns={"weight_final": "common_weight"})
+
+    contributions = bod_processed_long.merge(
+        weights,
+        on=["block", "family", "variable"],
+        how="left",
+        validate="many_to_one",
+    )
+    if contributions["common_weight"].isna().any():
+        bad = (
+            contributions.loc[
+                contributions["common_weight"].isna(),
+                ["block", "family", "variable"],
+            ]
+            .drop_duplicates()
+            .to_dict("records")
+        )
+        raise ValueError(f"Missing common BoD weights for decomposition keys: {bad}")
+
+    contributions["weighted_contribution"] = (
+        pd.to_numeric(contributions["value_normalized"], errors="raise")
+        * pd.to_numeric(contributions["common_weight"], errors="raise")
+    )
+
+    dynamic_score_cols = [
+        c for c in bod_dynamic_scores.columns if str(c).startswith("bod_")
+    ]
+    structural_score_cols = [
+        c for c in bod_structural_scores.columns if str(c).startswith("bod_")
+    ]
+
+    dyn_score_long = bod_dynamic_scores.melt(
+        id_vars=["region_id", "code", "geo_code", "geo_name", "year"],
+        value_vars=dynamic_score_cols,
+        var_name="score_feature",
+        value_name="family_score",
+    )
+    dyn_score_long["family"] = dyn_score_long["score_feature"].str.replace(
+        r"^bod_", "", regex=True
+    )
+    dyn_score_long["block"] = "DYNAMIC"
+
+    struct_score_long = bod_structural_scores.melt(
+        id_vars=["region_id", "code", "geo_code", "geo_name"],
+        value_vars=structural_score_cols,
+        var_name="score_feature",
+        value_name="family_score",
+    )
+    struct_score_long["family"] = struct_score_long["score_feature"].str.replace(
+        r"^bod_", "", regex=True
+    )
+    struct_score_long["block"] = "STRUCTURAL"
+
+    dyn_contrib = contributions[contributions["block"].eq("DYNAMIC")].copy()
+    dyn_contrib = dyn_contrib.merge(
+        dyn_score_long[
+            ["region_id", "code", "geo_code", "geo_name", "year", "family", "family_score"]
+        ],
+        on=["region_id", "code", "year", "family"],
+        how="left",
+        validate="many_to_one",
+    )
+    dyn_contrib["weight_scope"] = "COMMON_ACROSS_REGIONS_AND_2015_2019"
+
+    struct_contrib = contributions[contributions["block"].eq("STRUCTURAL")].copy()
+    struct_contrib = struct_contrib.merge(
+        struct_score_long[
+            ["region_id", "code", "geo_code", "geo_name", "family", "family_score"]
+        ],
+        on=["region_id", "code", "family"],
+        how="left",
+        validate="many_to_one",
+    )
+    struct_contrib["weight_scope"] = "COMMON_ACROSS_REGIONS_STRUCTURAL"
+
+    contributions = pd.concat(
+        [dyn_contrib, struct_contrib],
+        ignore_index=True,
+        sort=False,
+    )
+
+    if contributions["family_score"].isna().any():
+        raise ValueError("At least one BoD weighted contribution could not be linked to its family score.")
+
+    contributions["contribution_share_of_family_score"] = np.where(
+        pd.to_numeric(contributions["family_score"], errors="coerce").abs() > 1e-15,
+        contributions["weighted_contribution"] / contributions["family_score"],
+        np.nan,
+    )
+
+    # IMPORTANT: contribution_share_of_family_score is created only after the
+    # dynamic and structural contribution tables are concatenated. Rebuild the
+    # block-specific views from the enriched table so that every downstream
+    # reconciliation and wide export sees the complete decomposition schema.
+    dyn_contrib = contributions[contributions["block"].eq("DYNAMIC")].copy()
+    struct_contrib = contributions[contributions["block"].eq("STRUCTURAL")].copy()
+
+    # Reconciliation: family score must equal the exact sum of weighted components.
+    dyn_check = (
+        dyn_contrib.groupby(["region_id", "year", "family"], as_index=False)
+        .agg(
+            reconstructed_family_score=("weighted_contribution", "sum"),
+            family_score=("family_score", "first"),
+        )
+    )
+    struct_check = (
+        struct_contrib.groupby(["region_id", "family"], as_index=False)
+        .agg(
+            reconstructed_family_score=("weighted_contribution", "sum"),
+            family_score=("family_score", "first"),
+        )
+    )
+    all_errors = np.concatenate([
+        (
+            pd.to_numeric(dyn_check["reconstructed_family_score"], errors="raise")
+            - pd.to_numeric(dyn_check["family_score"], errors="raise")
+        ).abs().to_numpy(dtype=float),
+        (
+            pd.to_numeric(struct_check["reconstructed_family_score"], errors="raise")
+            - pd.to_numeric(struct_check["family_score"], errors="raise")
+        ).abs().to_numpy(dtype=float),
+    ])
+    max_abs_error = float(all_errors.max()) if len(all_errors) else 0.0
+    if max_abs_error > 1e-10:
+        raise ValueError(
+            "BoD decomposition does not reconcile with family scores; "
+            f"maximum absolute error = {max_abs_error:.3e}."
+        )
+
+    def _wide(
+        frame: pd.DataFrame,
+        score_frame: pd.DataFrame,
+        id_cols: list[str],
+    ) -> pd.DataFrame:
+        base = score_frame.copy()
+        metrics = {
+            "value_raw": "raw",
+            "value_normalized": "normalized",
+            "common_weight": "common_weight",
+            "weighted_contribution": "weighted_contribution",
+            "contribution_share_of_family_score": "share_of_family_score",
+        }
+        for metric, suffix in metrics.items():
+            piv = frame.pivot_table(
+                index=id_cols,
+                columns=["family", "variable"],
+                values=metric,
+                aggfunc="first",
+            )
+            if piv.empty:
+                continue
+            piv.columns = [
+                f"{family}__{variable}__{suffix}"
+                for family, variable in piv.columns.to_flat_index()
+            ]
+            piv = piv.reset_index()
+            base = base.merge(
+                piv,
+                on=id_cols,
+                how="left",
+                validate="one_to_one",
+            )
+        return base
+
+    dynamic_wide = _wide(
+        dyn_contrib,
+        bod_dynamic_scores,
+        ["region_id", "code", "year"],
+    )
+    structural_wide = _wide(
+        struct_contrib,
+        bod_structural_scores,
+        ["region_id", "code"],
+    )
+
+    # Stable sort for audit and downstream Power BI preparation.
+    sort_cols = [c for c in ["block", "family", "region_id", "year", "variable"] if c in contributions.columns]
+    contributions = contributions.sort_values(sort_cols).reset_index(drop=True)
+    dynamic_wide = dynamic_wide.sort_values(["region_id", "year"]).reset_index(drop=True)
+    structural_wide = structural_wide.sort_values(["region_id"]).reset_index(drop=True)
+
+    return contributions, dynamic_wide, structural_wide
+
+
 def transform_non_bod_variable(
     series: pd.Series,
     variable: str,
@@ -1850,8 +2083,8 @@ def transform_non_bod_variable(
 ) -> tuple[pd.Series, dict[str, Any]]:
     """Transform descriptive features and normalize by their maximum.
 
-    No Min-Max and no Z-score are used. LOG1P is applied only to the three
-    strongly right-skewed positive dynamic indicators previously identified in QA.
+    No Min-Max and no Z-score are used. LOG1P is applied only to active
+    positive descriptive/single-indicator features when specified by the final design.
     """
     raw = pd.to_numeric(series, errors="coerce")
     if raw.isna().any():
@@ -1920,8 +2153,6 @@ def build_final_model_representation(
     audit_rows = bod_preprocessing_audit.to_dict("records")
 
     non_bod_dynamic_specs = {
-        "wp_age_population": ("demographic_scale_distribution", "LOG1P"),
-        "population_density_per_km2": ("demographic_scale_distribution", "LOG1P"),
         "ntl_per_capita": ("regional_economic_activity_proxy", "LOG1P"),
     }
     for variable, (family, transformation) in non_bod_dynamic_specs.items():
@@ -1947,8 +2178,6 @@ def build_final_model_representation(
 
     dynamic_features = [
         ("bod_demographic_productive_potential", "demographic_productive_potential", "BOD_FAMILY_SCORE"),
-        ("wp_age_population_norm", "demographic_scale_distribution", "BALANCED_NON_NORMATIVE"),
-        ("population_density_per_km2_norm", "demographic_scale_distribution", "BALANCED_NON_NORMATIVE"),
         ("bod_socioeconomic_deprivation", "socioeconomic_deprivation", "BOD_FAMILY_SCORE"),
         ("ntl_per_capita_norm", "regional_economic_activity_proxy", "SINGLE_INDICATOR"),
     ]
@@ -2133,6 +2362,8 @@ def write_qa_workbook(
     sample_tradeoff: pd.DataFrame,
     bod_design: pd.DataFrame,
     bod_raw: pd.DataFrame,
+    bod_processed_long: pd.DataFrame,
+    bod_weighted_contributions: pd.DataFrame,
     flagged_qa: pd.DataFrame,
     correlations: pd.DataFrame,
     redundancy: pd.DataFrame,
@@ -2149,6 +2380,10 @@ def write_qa_workbook(
         sample_tradeoff.to_excel(writer, sheet_name="sample_tradeoff", index=False)
         bod_design.to_excel(writer, sheet_name="bod_family_design", index=False)
         bod_raw.head(1_000_000).to_excel(writer, sheet_name="bod_input_raw", index=False)
+        bod_processed_long.head(1_000_000).to_excel(writer, sheet_name="bod_processed", index=False)
+        bod_weighted_contributions.head(1_000_000).to_excel(
+            writer, sheet_name="bod_contributions", index=False
+        )
         flagged_qa.to_excel(writer, sheet_name="flagged_source_qa", index=False)
         redundancy.to_excel(writer, sheet_name="high_redundancy", index=False)
         correlations.to_excel(writer, sheet_name="correlations", index=False)
@@ -2171,6 +2406,9 @@ def write_final_handoff_workbook(
     preprocessing_audit: pd.DataFrame,
     bod_weights: pd.DataFrame,
     bod_summary: pd.DataFrame,
+    bod_weighted_contributions: pd.DataFrame,
+    bod_dynamic_decomposition: pd.DataFrame,
+    bod_structural_decomposition: pd.DataFrame,
     country_dynamic: pd.DataFrame,
     country_structural: pd.DataFrame,
     official_region_set: pd.DataFrame,
@@ -2182,6 +2420,9 @@ def write_final_handoff_workbook(
         preprocessing_audit.to_excel(writer, sheet_name="preprocessing_audit", index=False)
         bod_weights.to_excel(writer, sheet_name="bod_weights", index=False)
         bod_summary.to_excel(writer, sheet_name="bod_summary", index=False)
+        bod_weighted_contributions.to_excel(writer, sheet_name="bod_contributions", index=False)
+        bod_dynamic_decomposition.to_excel(writer, sheet_name="bod_dynamic_decomp", index=False)
+        bod_structural_decomposition.to_excel(writer, sheet_name="bod_struct_decomp", index=False)
         country_dynamic.to_excel(writer, sheet_name="country_dynamic", index=False)
         country_structural.to_excel(writer, sheet_name="country_structural", index=False)
         official_region_set.to_excel(writer, sheet_name="official_regions", index=False)
@@ -2193,7 +2434,7 @@ def write_final_handoff_workbook(
 # =============================================================================
 
 def main() -> None:
-    print_header("SCRIPT 04 v4.0 — FINAL ANALYTICAL PREPARATION + COMMON-WEIGHT BoD")
+    print_header("SCRIPT 04 v4.1 — FINAL ANALYTICAL PREPARATION + COMMON-WEIGHT BoD + ANNUAL DECOMPOSITION")
     print(f"Project root: {ROOT}")
     print(f"Analytical period: {START_YEAR}–{END_YEAR}")
     print(
@@ -2338,6 +2579,28 @@ def main() -> None:
         "mean_contribution_final", "restriction_applied", "final_model"
     ]].to_string(index=False))
 
+    (
+        bod_weighted_contributions,
+        bod_dynamic_decomposition,
+        bod_structural_decomposition,
+    ) = build_bod_weighted_decomposition(
+        bod_processed_long,
+        bod_weights,
+        bod_dynamic_scores,
+        bod_structural_scores,
+    )
+    print(
+        "\nBoD decomposition: "
+        f"{len(bod_weighted_contributions):,} variable-level contributions | "
+        f"{len(bod_dynamic_decomposition):,} dynamic region-year rows | "
+        f"{len(bod_structural_decomposition):,} structural rows"
+    )
+    print(
+        "Dynamic BoD rule: same common weight vector for every region and year; "
+        "annual family scores are exact sums of weighted normalized components; "
+        "no post-BoD re-normalization."
+    )
+
     # ------------------------------------------------------------------
     # 8. Build final dynamic/structural representation for M-Exp-FCMd
     # ------------------------------------------------------------------
@@ -2421,6 +2684,9 @@ def main() -> None:
     write_csv(bod_weights, BOD_WEIGHTS_OUTPUT)
     write_csv(bod_summary, BOD_FAMILY_SUMMARY_OUTPUT)
     write_csv(bod_processed_long, BOD_PROCESSED_LONG_OUTPUT)
+    write_csv(bod_weighted_contributions, BOD_WEIGHTED_CONTRIBUTIONS_OUTPUT)
+    write_csv(bod_dynamic_decomposition, BOD_DYNAMIC_DECOMPOSITION_OUTPUT)
+    write_csv(bod_structural_decomposition, BOD_STRUCTURAL_DECOMPOSITION_OUTPUT)
     write_csv(bod_dynamic_scores, BOD_DYNAMIC_SCORES_OUTPUT)
     write_csv(bod_structural_scores, BOD_STRUCTURAL_SCORES_OUTPUT)
     write_csv(final_dynamic_model, FINAL_DYNAMIC_MODEL_OUTPUT)
@@ -2449,6 +2715,9 @@ def main() -> None:
             "bod_family_design": bod_design,
             "bod_input_raw_long": bod_raw,
             "bod_processed_indicators_long": bod_processed_long,
+            "bod_weighted_contributions_long": bod_weighted_contributions,
+            "bod_dynamic_decomposition_2015_2019": bod_dynamic_decomposition,
+            "bod_structural_decomposition": bod_structural_decomposition,
             "bod_common_weights": bod_weights,
             "bod_family_summary": bod_summary,
             "bod_dynamic_scores": bod_dynamic_scores,
@@ -2486,6 +2755,8 @@ def main() -> None:
         sample_tradeoff,
         bod_design,
         bod_raw,
+        bod_processed_long,
+        bod_weighted_contributions,
         flagged_qa,
         correlations,
         redundancy,
@@ -2502,6 +2773,9 @@ def main() -> None:
         preprocessing_audit,
         bod_weights,
         bod_summary,
+        bod_weighted_contributions,
+        bod_dynamic_decomposition,
+        bod_structural_decomposition,
         country_reference_dynamic,
         country_reference_structural,
         official_region_set,
@@ -2518,13 +2792,34 @@ def main() -> None:
     print(f"Final structural model features: {len(final_feature_weights[final_feature_weights['block'].eq('STRUCTURAL')])}")
     print(f"BoD families estimated:          {len(bod_summary)}")
     print(f"BoD weights output:              {BOD_WEIGHTS_OUTPUT}")
+    print(f"BoD annual decomposition:        {BOD_DYNAMIC_DECOMPOSITION_OUTPUT}")
+    print(f"BoD contribution-level output:   {BOD_WEIGHTED_CONTRIBUTIONS_OUTPUT}")
     print(f"Dynamic Script-05 handoff:       {FINAL_DYNAMIC_MODEL_OUTPUT}")
     print(f"Structural Script-05 handoff:    {FINAL_STRUCTURAL_MODEL_OUTPUT}")
     print(f"Feature-weight metadata:         {FINAL_FEATURE_WEIGHTS_OUTPUT}")
     print(f"Final handoff workbook:          {FINAL_HANDOFF_WORKBOOK_OUTPUT}")
     print(f"DuckDB:                          {DUCKDB_OUTPUT}")
 
-    print("\nSCRIPT 04 COMPLETE — READY FOR SCRIPT 05 (M-Exp-FCMd)")
+    dynamic_features_final = final_feature_weights.loc[
+        final_feature_weights["block"].eq("DYNAMIC"), "feature"
+    ].astype(str).tolist()
+    removed_features = {"wp_age_population_norm", "population_density_per_km2_norm"}
+    if removed_features.intersection(dynamic_features_final):
+        raise ValueError(
+            "Removed demographic scale/distribution features unexpectedly remain in the final handoff."
+        )
+    expected_final_dynamic = {
+        "bod_demographic_productive_potential",
+        "bod_socioeconomic_deprivation",
+        "ntl_per_capita_norm",
+    }
+    if set(dynamic_features_final) != expected_final_dynamic:
+        raise ValueError(
+            "Unexpected final dynamic feature set. "
+            f"Expected {sorted(expected_final_dynamic)}, found {sorted(dynamic_features_final)}."
+        )
+
+    print("\nSCRIPT 04 COMPLETE — ONE-CLICK HANDOFF VALIDATED; READY FOR SCRIPT 05 (M-Exp-FCMd)")
 
 
 if __name__ == "__main__":
