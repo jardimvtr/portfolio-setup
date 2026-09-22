@@ -1,0 +1,104 @@
+table Dim_Region
+	lineageTag: 1b2b2a9b-2018-4374-8fa7-82f4434d6f28
+
+	column region_id
+		dataType: string
+		lineageTag: 5a4af359-60fd-4ebc-b040-9bdf1d594be2
+		summarizeBy: none
+		sourceColumn: region_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column code
+		dataType: string
+		lineageTag: ff18649a-0a1c-42d2-aecb-a2e636296b8f
+		summarizeBy: none
+		sourceColumn: code
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_code
+		dataType: string
+		lineageTag: 12d4c983-2c4d-4612-8eb3-30f1e89c5741
+		summarizeBy: none
+		sourceColumn: geo_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_name
+		dataType: string
+		lineageTag: 9fe21059-d10a-423c-aae9-a2bb095fbf08
+		summarizeBy: none
+		sourceColumn: geo_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column region_label
+		dataType: string
+		lineageTag: 4620b40b-3e1d-458b-9d11-68d2e335a873
+		summarizeBy: none
+		sourceColumn: region_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column country_name = RELATED ( Dim_Country[country_name] )
+		displayFolder: Dashboard
+		lineageTag: 92054a0c-151d-5d81-922b-ea043edb1aeb
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column display_class_sort =
+			VAR tz = LOOKUPVALUE ( Fact_Region[transition_zone], Fact_Region[region_id], Dim_Region[region_id] )
+			VAR hc = LOOKUPVALUE ( Fact_Region[hard_cluster], Fact_Region[region_id], Dim_Region[region_id] )
+			RETURN IF ( tz = TRUE (), 2, IF ( hc = 1, 1, 3 ) )
+		isHidden
+		displayFolder: Dashboard
+		lineageTag: e597fc6c-c250-531a-8bf7-a7914e99dd9f
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column display_class = SWITCH ( Dim_Region[display_class_sort], 1, "C1", 2, "Transition", 3, "C2" )
+		displayFolder: Dashboard
+		lineageTag: cf54b3c5-cf9e-56ec-83fc-0b055cd91f56
+		summarizeBy: none
+		sortByColumn: display_class_sort
+
+		annotation SummarizationSetBy = Automatic
+
+	column movement_status_sort =
+			VAR toward = LOOKUPVALUE ( Fact_Region[converged_toward_destination], Fact_Region[region_id], Dim_Region[region_id] )
+			VAR away = LOOKUPVALUE ( Fact_Region[moved_away_from_destination], Fact_Region[region_id], Dim_Region[region_id] )
+			RETURN IF ( toward = TRUE (), 1, IF ( away = TRUE (), 2, 3 ) )
+		isHidden
+		displayFolder: Dashboard
+		lineageTag: 0f39e764-7eae-5442-b2e3-437e7b0dcdd6
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column movement_status = SWITCH ( Dim_Region[movement_status_sort], 1, "Moved toward alternative profile", 2, "Moved away from alternative profile", 3, "Profile medoid (reference region)" )
+		displayFolder: Dashboard
+		lineageTag: 3db0f481-dff6-556a-bad6-8fe95999152b
+		summarizeBy: none
+		sortByColumn: movement_status_sort
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_Region = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Dim_Region", Kind = "Sheet"]}[Data],
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Navegação 1", {{"Column1", type text}, {"Column2", type text}, {"Column3", type text}, {"Column4", type text}, {"Column5", type text}}),
+				    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(#"Tipo de coluna alterado", [PromoteAllScalars=true]),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{"region_id", type text}, {"code", type text}, {"geo_code", type text}, {"geo_name", type text}, {"region_label", type text}})
+				in
+				  #"Tipo Alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

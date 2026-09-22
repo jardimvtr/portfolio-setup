@@ -1,0 +1,90 @@
+table Conv_Family
+	lineageTag: 32f49b7a-c1ce-4dfe-8e07-2fee44e4d5c1
+
+	column flow
+		dataType: string
+		lineageTag: 452d55d9-6b09-427d-b1d4-1c7106776510
+		summarizeBy: none
+		sourceColumn: flow
+
+		annotation SummarizationSetBy = Automatic
+
+	column converging_regions_in_flow
+		dataType: int64
+		formatString: 0
+		lineageTag: 2b587eb3-826f-4e5d-a890-da4fcdb7f3ca
+		summarizeBy: sum
+		sourceColumn: converging_regions_in_flow
+
+		annotation SummarizationSetBy = Automatic
+
+	column median_contribution
+		dataType: double
+		lineageTag: 597a23b9-04f1-4ee1-aeaa-9fc955e01f20
+		summarizeBy: sum
+		sourceColumn: median_contribution
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column mean_contribution
+		dataType: double
+		lineageTag: 8c955bfc-351a-4d63-8824-48b41a2fe34d
+		summarizeBy: sum
+		sourceColumn: mean_contribution
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column regions_positive_contribution
+		dataType: int64
+		formatString: 0
+		lineageTag: 0dc236d1-1c21-46b5-9510-637e74f65320
+		summarizeBy: sum
+		sourceColumn: regions_positive_contribution
+
+		annotation SummarizationSetBy = Automatic
+
+	column consistency_pct
+		dataType: double
+		lineageTag: 785be224-c2ac-4b2e-b3c5-6cecba123564
+		summarizeBy: sum
+		sourceColumn: consistency_pct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column family
+		dataType: string
+		lineageTag: 4210a491-c734-4cbd-b04b-ab98f1fe8841
+		summarizeBy: none
+		sourceColumn: family
+
+		annotation SummarizationSetBy = Automatic
+
+	column aggregation_scope
+		dataType: string
+		lineageTag: 655a415d-4d7d-47b4-807d-e61f374be380
+		summarizeBy: none
+		sourceColumn: aggregation_scope
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Conv_Family = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Conv_Family", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"flow", type text}, {"converging_regions_in_flow", Int64.Type}, {"median_contribution", type number}, {"mean_contribution", type number}, {"regions_positive_contribution", Int64.Type}, {"consistency_pct", type number}, {"family", type text}, {"aggregation_scope", type text}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,35 @@
+table Model_Summary
+	lineageTag: 36d738b9-5750-4800-b90f-8ce04645affb
+
+	column parameter
+		dataType: string
+		lineageTag: 510a297c-f726-43f3-8b25-e241e74e280d
+		summarizeBy: none
+		sourceColumn: parameter
+
+		annotation SummarizationSetBy = Automatic
+
+	column value
+		dataType: string
+		lineageTag: 7820f453-cdbb-49e8-a066-7ef6c662b16e
+		summarizeBy: none
+		sourceColumn: value
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Model_Summary = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Model_Summary", Kind = "Sheet"]}[Data],
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Navegação 1", {{"Column1", type text}, {"Column2", type text}}),
+				    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(#"Tipo de coluna alterado", [PromoteAllScalars=true]),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{"parameter", type text}, {"value", type text}})
+				in
+				  #"Tipo Alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,24 @@
+model Model
+	culture: pt-BR
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: pt-BR
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_ProTooling = ["DevMode","TMDLView_Desktop"]
+
+annotation PBI_QueryOrder = ["Dim_Country","Dim_Region","Fact_Region","RVC_Region","RVC_Country","RVC_Variance"]
+
+ref table Dim_Country
+ref table Dim_Region
+ref table Fact_Region
+ref table RVC_Region
+ref table RVC_Country
+ref table RVC_Variance
+
+ref cultureInfo pt-BR
+

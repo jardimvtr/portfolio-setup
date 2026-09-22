@@ -1,0 +1,94 @@
+table Conv_Flow
+	lineageTag: 6566e5f8-79ad-4f04-8b6f-9f2a272eeb62
+
+	column flow
+		dataType: string
+		lineageTag: 9c7c040b-5823-446e-a489-88c74e3f32b5
+		summarizeBy: none
+		sourceColumn: flow
+
+		annotation SummarizationSetBy = Automatic
+
+	column origin_regions
+		dataType: int64
+		formatString: 0
+		lineageTag: 85082c73-bd54-47f4-af4d-46869ddf37f1
+		summarizeBy: sum
+		sourceColumn: origin_regions
+
+		annotation SummarizationSetBy = Automatic
+
+	column regions_converging_toward_destination
+		dataType: int64
+		formatString: 0
+		lineageTag: 833ee8b6-5515-46eb-89f4-b3b4c6175f51
+		summarizeBy: sum
+		sourceColumn: regions_converging_toward_destination
+
+		annotation SummarizationSetBy = Automatic
+
+	column share_converging_toward_destination
+		dataType: double
+		lineageTag: df7c3c18-d74d-4d8f-aa49-c3e0bc193329
+		summarizeBy: sum
+		sourceColumn: share_converging_toward_destination
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column median_convergence_index_all
+		dataType: double
+		lineageTag: 23a9f9fb-3ee8-4a19-8c1a-12b97db65587
+		summarizeBy: sum
+		sourceColumn: median_convergence_index_all
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column mean_convergence_index_all
+		dataType: double
+		lineageTag: 11feaf72-f4a9-4f54-a862-9db1b0e4da1b
+		summarizeBy: sum
+		sourceColumn: mean_convergence_index_all
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column median_convergence_index_convergers
+		dataType: double
+		lineageTag: 3c357d88-80fc-43f4-9c6b-3065d03cd24d
+		summarizeBy: sum
+		sourceColumn: median_convergence_index_convergers
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column mean_convergence_index_convergers
+		dataType: double
+		lineageTag: c3471b02-9c8e-4a88-ba09-b6b57da48b04
+		summarizeBy: sum
+		sourceColumn: mean_convergence_index_convergers
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Conv_Flow = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Conv_Flow", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"flow", type text}, {"origin_regions", Int64.Type}, {"regions_converging_toward_destination", Int64.Type}, {"share_converging_toward_destination", type number}, {"median_convergence_index_all", type number}, {"mean_convergence_index_all", type number}, {"median_convergence_index_convergers", type number}, {"mean_convergence_index_convergers", type number}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

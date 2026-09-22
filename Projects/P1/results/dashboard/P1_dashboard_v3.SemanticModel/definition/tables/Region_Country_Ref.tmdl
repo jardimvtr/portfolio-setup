@@ -1,0 +1,133 @@
+table Region_Country_Ref
+	lineageTag: a78c82b5-0aac-4d37-9b7d-d2a83d59237c
+
+	column region_id
+		dataType: string
+		lineageTag: a8e098fc-de13-467e-8372-bd8d67d3b3fb
+		summarizeBy: none
+		sourceColumn: region_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column code
+		dataType: string
+		lineageTag: 265b7a81-7053-48cc-ba60-27cc4b575d38
+		summarizeBy: none
+		sourceColumn: code
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_code
+		dataType: string
+		lineageTag: abf5505e-d729-4b2c-847b-6bc0dc095d27
+		summarizeBy: none
+		sourceColumn: geo_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_name
+		dataType: string
+		lineageTag: 9e0c4b2c-8dbf-44b2-a2aa-250e9b55fe77
+		summarizeBy: none
+		sourceColumn: geo_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column reference_country_code
+		dataType: string
+		lineageTag: 0b636847-0488-4a8d-b87a-1befb8eb817d
+		summarizeBy: none
+		sourceColumn: reference_country_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_own_country_reference
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 67174dc1-fc00-4ebb-b3f9-0b456fce802b
+		summarizeBy: none
+		sourceColumn: is_own_country_reference
+
+		annotation SummarizationSetBy = Automatic
+
+	column reference_method
+		dataType: string
+		lineageTag: b464490a-ddf7-4b5a-9bfb-cca5114c75a0
+		summarizeBy: none
+		sourceColumn: reference_method
+
+		annotation SummarizationSetBy = Automatic
+
+	column reference_contributing_regions
+		dataType: int64
+		formatString: 0
+		lineageTag: 44132f0c-92ad-435a-87fa-f673b665fe33
+		summarizeBy: sum
+		sourceColumn: reference_contributing_regions
+
+		annotation SummarizationSetBy = Automatic
+
+	column mean_annual_distance_2015_2019
+		dataType: double
+		lineageTag: 403a73fd-f1d7-48e4-91c5-9655b04780df
+		summarizeBy: sum
+		sourceColumn: mean_annual_distance_2015_2019
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column distance_2015
+		dataType: double
+		lineageTag: 58e1e138-ada3-44be-b592-ffc4e71881b4
+		summarizeBy: sum
+		sourceColumn: distance_2015
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column distance_2019
+		dataType: double
+		lineageTag: 4b7ecaf8-2fe8-4f4a-ae3a-b0960c8c746b
+		summarizeBy: sum
+		sourceColumn: distance_2019
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column distance_change_2015_2019
+		dataType: double
+		lineageTag: 3266fcc1-694e-476c-a1f9-c3daa371402f
+		summarizeBy: sum
+		sourceColumn: distance_change_2015_2019
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column overall_reference_rank
+		dataType: int64
+		formatString: 0
+		lineageTag: c809bca4-03b5-48f0-aba7-01cf8738b5d5
+		summarizeBy: sum
+		sourceColumn: overall_reference_rank
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Region_Country_Ref = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Region_Country_Ref", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"region_id", type text}, {"code", type text}, {"geo_code", type text}, {"geo_name", type text}, {"reference_country_code", type text}, {"is_own_country_reference", type logical}, {"reference_method", type text}, {"reference_contributing_regions", Int64.Type}, {"mean_annual_distance_2015_2019", type number}, {"distance_2015", type number}, {"distance_2019", type number}, {"distance_change_2015_2019", type number}, {"overall_reference_rank", Int64.Type}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

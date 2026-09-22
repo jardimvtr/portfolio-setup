@@ -1,0 +1,16 @@
+relationship rel_dim_region__dim_country
+	fromColumn: Dim_Region.code
+	toColumn: Dim_Country.code
+
+relationship rel_fact_region__dim_region
+	fromColumn: Fact_Region.region_id
+	toColumn: Dim_Region.region_id
+
+relationship rel_rvc_region__dim_region
+	fromColumn: RVC_Region.region_id
+	toColumn: Dim_Region.region_id
+
+relationship rel_rvc_country__dim_country
+	fromColumn: RVC_Country.code
+	toColumn: Dim_Country.code
+

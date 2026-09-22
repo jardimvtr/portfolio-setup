@@ -1,0 +1,88 @@
+table RVC_Region
+	lineageTag: 2d3a7930-2bbf-4788-bf01-bbd4c7af1d9f
+
+	column region_id
+		dataType: string
+		lineageTag: 3960cd5f-7a91-4fbc-9338-4085661b2b7e
+		summarizeBy: none
+		sourceColumn: region_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column code
+		dataType: string
+		lineageTag: ff4ee620-7467-4242-8d72-385ae90190c4
+		summarizeBy: none
+		sourceColumn: code
+
+		annotation SummarizationSetBy = Automatic
+
+	column nn1_region_id
+		dataType: string
+		lineageTag: 700bc321-3fd4-4b23-9d92-8398a3510ee3
+		summarizeBy: none
+		sourceColumn: nn1_region_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column nn1_country_code
+		dataType: string
+		lineageTag: aec25943-a225-4904-b734-548b624cf593
+		summarizeBy: none
+		sourceColumn: nn1_country_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column nn1_is_foreign
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 34350fb2-a48f-443a-acef-c02b72663ba0
+		summarizeBy: none
+		sourceColumn: nn1_is_foreign
+
+		annotation SummarizationSetBy = Automatic
+
+	column foreign_share_k5
+		dataType: double
+		lineageTag: 0e99c1c6-f134-43f8-83aa-cc1e28e98756
+		summarizeBy: sum
+		sourceColumn: foreign_share_k5
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column country_majority_profile
+		dataType: int64
+		formatString: 0
+		lineageTag: c3a2d5f7-7fb1-47fa-863d-6b7f2a431efb
+		summarizeBy: sum
+		sourceColumn: country_majority_profile
+
+		annotation SummarizationSetBy = Automatic
+
+	column differs_from_country_majority
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 8cf93321-b646-4e3c-bfe7-45a31e5a8667
+		summarizeBy: none
+		sourceColumn: differs_from_country_majority
+
+		annotation SummarizationSetBy = Automatic
+
+	partition RVC_Region = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.3_region_vs_country.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "RVC_Region", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Colunas selecionadas" = Table.SelectColumns(#"Cabeçalhos promovidos", {"region_id", "code", "nn1_region_id", "nn1_country_code", "nn1_is_foreign", "foreign_share_k5", "country_majority_profile", "differs_from_country_majority"}),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Colunas selecionadas", {{"region_id", type text}, {"code", type text}, {"nn1_region_id", type text}, {"nn1_country_code", type text}, {"nn1_is_foreign", type logical}, {"foreign_share_k5", type number}, {"country_majority_profile", Int64.Type}, {"differs_from_country_majority", type logical}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

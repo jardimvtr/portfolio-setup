@@ -1,0 +1,148 @@
+table Indicator_Profile
+	lineageTag: f478c019-aa46-44f3-b32c-aa27816c0a1d
+
+	column cluster
+		dataType: int64
+		formatString: 0
+		lineageTag: baa7c311-1ecf-4519-8c39-60309f5f7324
+		summarizeBy: sum
+		sourceColumn: cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column family
+		dataType: string
+		lineageTag: 10c95017-4082-4358-94c9-77c62ec4a18a
+		summarizeBy: none
+		sourceColumn: family
+
+		annotation SummarizationSetBy = Automatic
+
+	column variable
+		dataType: string
+		lineageTag: 4f038dc0-4b3c-4eb4-9b1f-04cd70424c1f
+		summarizeBy: none
+		sourceColumn: variable
+
+		annotation SummarizationSetBy = Automatic
+
+	column common_weight
+		dataType: double
+		lineageTag: ccef681c-9a8e-4c1a-a41d-118b7ae75f0b
+		summarizeBy: sum
+		sourceColumn: common_weight
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column hard_cluster_size
+		dataType: int64
+		formatString: 0
+		lineageTag: 9c9c5808-e3d6-41a2-b013-80cf0fd445b3
+		summarizeBy: sum
+		sourceColumn: hard_cluster_size
+
+		annotation SummarizationSetBy = Automatic
+
+	column effective_fuzzy_size
+		dataType: double
+		lineageTag: a06a3f2d-e49d-451d-b92b-f12052b2ff16
+		summarizeBy: sum
+		sourceColumn: effective_fuzzy_size
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column profile_mean
+		dataType: double
+		lineageTag: 6fd57956-6366-4985-b163-23cbddf5c6ac
+		summarizeBy: sum
+		sourceColumn: profile_mean
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column profile_median
+		dataType: double
+		lineageTag: 290675b8-0515-4fbe-b0ac-41092d1415b1
+		summarizeBy: sum
+		sourceColumn: profile_median
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column profile_q25
+		dataType: double
+		lineageTag: 7437d37e-ea43-4238-a43e-e64f5253b8ae
+		summarizeBy: sum
+		sourceColumn: profile_q25
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column profile_q75
+		dataType: double
+		lineageTag: 013b3b81-ff8e-4868-a72b-084ed5e69305
+		summarizeBy: sum
+		sourceColumn: profile_q75
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column weighted_contribution_mean
+		dataType: double
+		lineageTag: 9dd4ba5f-4cda-4e50-a549-753812adf95d
+		summarizeBy: sum
+		sourceColumn: weighted_contribution_mean
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column share_of_family_score_mean
+		dataType: double
+		lineageTag: b2602dfd-f824-4467-bfd9-5b2897b86110
+		summarizeBy: sum
+		sourceColumn: share_of_family_score_mean
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column value_basis
+		dataType: string
+		lineageTag: f2cb1415-b69d-47a7-bebb-d415cc8cce53
+		summarizeBy: none
+		sourceColumn: value_basis
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_table
+		dataType: string
+		lineageTag: b5f83046-502d-415b-8ac0-409cc23b09d2
+		summarizeBy: none
+		sourceColumn: source_table
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Indicator_Profile = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Indicator_Profile", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"cluster", Int64.Type}, {"family", type text}, {"variable", type text}, {"common_weight", type number}, {"hard_cluster_size", Int64.Type}, {"effective_fuzzy_size", type number}, {"profile_mean", type number}, {"profile_median", type number}, {"profile_q25", type number}, {"profile_q75", type number}, {"weighted_contribution_mean", type number}, {"share_of_family_score_mean", type number}, {"value_basis", type text}, {"source_table", type text}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

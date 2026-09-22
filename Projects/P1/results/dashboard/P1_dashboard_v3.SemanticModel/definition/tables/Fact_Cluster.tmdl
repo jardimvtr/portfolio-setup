@@ -1,0 +1,183 @@
+table Fact_Cluster
+	lineageTag: 2899b712-e6f7-46f5-b373-ba82b5a7222f
+
+	column cluster
+		dataType: int64
+		formatString: 0
+		lineageTag: d3cf349e-f7b4-45d2-8c7b-cbe80b28e728
+		summarizeBy: sum
+		sourceColumn: cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column hard_cluster_size
+		dataType: int64
+		formatString: 0
+		lineageTag: 5b40ef15-d8c8-4451-86cc-c18e2230d7b6
+		summarizeBy: sum
+		sourceColumn: hard_cluster_size
+
+		annotation SummarizationSetBy = Automatic
+
+	column effective_fuzzy_size
+		dataType: double
+		lineageTag: 2e85390c-a27b-4061-9f88-3801db67b053
+		summarizeBy: sum
+		sourceColumn: effective_fuzzy_size
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column mean_max_membership
+		dataType: double
+		lineageTag: 726797a1-407a-4aab-aca3-27591143724b
+		summarizeBy: sum
+		sourceColumn: mean_max_membership
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column median_membership_margin
+		dataType: double
+		lineageTag: a11076f2-3aa9-425d-bd72-38ebd1ad789c
+		summarizeBy: sum
+		sourceColumn: median_membership_margin
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column mean_membership_entropy_normalized
+		dataType: double
+		lineageTag: 79074ca7-8644-4029-93a6-d25651d622df
+		summarizeBy: sum
+		sourceColumn: mean_membership_entropy_normalized
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column alternative_profile
+		dataType: int64
+		formatString: 0
+		lineageTag: 711958d9-6ae6-4354-ac9d-612b46d4792c
+		summarizeBy: sum
+		sourceColumn: alternative_profile
+
+		annotation SummarizationSetBy = Automatic
+
+	column directional_flow_label
+		dataType: string
+		lineageTag: 7ab817a5-f4b0-41c0-8f2f-f3abdc269443
+		summarizeBy: none
+		sourceColumn: directional_flow_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column medoid_region_id
+		dataType: string
+		lineageTag: 5228e1ca-7640-4052-80f2-991bf8272f09
+		summarizeBy: none
+		sourceColumn: medoid_region_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column medoid_country_code
+		dataType: string
+		lineageTag: 1748cb8d-6440-44ad-9cc3-d5514d7c96a2
+		summarizeBy: none
+		sourceColumn: medoid_country_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column medoid_geo_code
+		dataType: string
+		lineageTag: c0f23994-f0b5-4d40-bfcc-887756026f8a
+		summarizeBy: none
+		sourceColumn: medoid_geo_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column medoid_geo_name
+		dataType: string
+		lineageTag: b55aa22c-18e5-44ea-b780-6da17660e3ba
+		summarizeBy: none
+		sourceColumn: medoid_geo_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column fuzzy_transition_regions
+		dataType: int64
+		formatString: 0
+		lineageTag: 3342c402-d3b5-4d50-a080-7d9f5c1d089b
+		summarizeBy: sum
+		sourceColumn: fuzzy_transition_regions
+
+		annotation SummarizationSetBy = Automatic
+
+	column fuzzy_transition_share_within_cluster
+		dataType: double
+		lineageTag: 9e376833-b412-4488-80bb-a1fb34dd777b
+		summarizeBy: sum
+		sourceColumn: fuzzy_transition_share_within_cluster
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column regions_converging_toward_alternative_profile
+		dataType: int64
+		formatString: 0
+		lineageTag: 696e233d-f14a-4924-888b-ce8729401c6f
+		summarizeBy: sum
+		sourceColumn: regions_converging_toward_alternative_profile
+
+		annotation SummarizationSetBy = Automatic
+
+	column share_converging_toward_alternative_profile
+		dataType: double
+		lineageTag: b065fda4-f3f1-45a1-bbc4-30ad69fccffa
+		summarizeBy: sum
+		sourceColumn: share_converging_toward_alternative_profile
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column median_convergence_index_all
+		dataType: double
+		lineageTag: 1a178528-d1f9-4a91-8cc4-3228e569d13d
+		summarizeBy: sum
+		sourceColumn: median_convergence_index_all
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column mean_convergence_index_all
+		dataType: double
+		lineageTag: 5538046a-3e0e-4e3e-811b-9be31e3aba13
+		summarizeBy: sum
+		sourceColumn: mean_convergence_index_all
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Fact_Cluster = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Fact_Cluster", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"cluster", Int64.Type}, {"hard_cluster_size", Int64.Type}, {"effective_fuzzy_size", type number}, {"mean_max_membership", type number}, {"median_membership_margin", type number}, {"mean_membership_entropy_normalized", type number}, {"alternative_profile", Int64.Type}, {"directional_flow_label", type text}, {"medoid_region_id", type text}, {"medoid_country_code", type text}, {"medoid_geo_code", type text}, {"medoid_geo_name", type text}, {"fuzzy_transition_regions", Int64.Type}, {"fuzzy_transition_share_within_cluster", type number}, {"regions_converging_toward_alternative_profile", Int64.Type}, {"share_converging_toward_alternative_profile", type number}, {"median_convergence_index_all", type number}, {"mean_convergence_index_all", type number}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

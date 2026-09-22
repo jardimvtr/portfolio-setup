@@ -1,0 +1,220 @@
+table Fact_Region
+	lineageTag: 89d07a5c-f0b9-4971-b598-41f1edb92d34
+
+	measure Regions = DISTINCTCOUNT('Fact_Region'[region_id])
+		formatString: 0
+		displayFolder: Core
+		lineageTag: f89fa146-6bf4-4cd5-bac7-cf4a533e0e12
+
+	measure Countries = DISTINCTCOUNT('Fact_Region'[code])
+		formatString: 0
+		displayFolder: Core
+		lineageTag: 17fdab74-33f0-491e-ae43-d2577bfc14d3
+
+	measure 'C1 regions' = CALCULATE ( [Regions], KEEPFILTERS ( Fact_Region[hard_cluster] = 1 ) ) + 0
+		formatString: 0
+		displayFolder: Core
+		lineageTag: 471aaa79-b0b9-453b-84e6-9460f106db78
+
+	measure 'C2 regions' = CALCULATE ( [Regions], KEEPFILTERS ( Fact_Region[hard_cluster] = 2 ) ) + 0
+		formatString: 0
+		displayFolder: Core
+		lineageTag: bb2aad19-2354-4ce7-bca3-2e9652f86e40
+
+	measure 'Moving toward the other profile' = CALCULATE ( [Regions], KEEPFILTERS ( Fact_Region[converged_toward_destination] = TRUE () ) ) + 0
+		formatString: 0
+		displayFolder: Movement
+		lineageTag: 457ad0cc-4212-4d77-8e81-2eef011ec740
+
+	measure 'Moving toward the other profile (share)' = DIVIDE ( [Moving toward the other profile], [Regions] )
+		formatString: 0.0%
+		displayFolder: Movement
+		lineageTag: b5d59c99-2fdc-471a-8be4-dfccdc34eb71
+
+	measure 'Map colour' =
+			SWITCH (
+			    SELECTEDVALUE ( Fact_Region[hard_cluster] ),
+			    1, "#14212E",
+			    2, "#0F7C73",
+			    "#D5DCE3"
+			)
+		displayFolder: Formatting
+		lineageTag: ed3b3370-53bd-4051-abe8-121d2e813860
+
+	measure 'Region profile label' =
+			IF (
+			    HASONEVALUE ( Fact_Region[hard_cluster] ),
+			    "Profile C" & SELECTEDVALUE ( Fact_Region[hard_cluster] ),
+			    BLANK ()
+			)
+		displayFolder: Text
+		lineageTag: 5e7b4508-31a5-49fd-bcfe-c2d26c4cff13
+
+	measure 'Region movement label' =
+			IF (
+			    HASONEVALUE ( Fact_Region[region_id] ),
+			    SWITCH (
+			        TRUE (),
+			        SELECTEDVALUE ( Fact_Region[converged_toward_destination] ), "Moving toward the other profile",
+			        SELECTEDVALUE ( Fact_Region[moved_away_from_destination] ), "Moving away from the other profile",
+			        "No clear direction"
+			    ),
+			    BLANK ()
+			)
+		displayFolder: Text
+		lineageTag: 46bec93b-e5b2-459e-be46-941eed517480
+
+	measure 'Country share of profile' = CALCULATE ( AVERAGE ( RVC_Variance[eta2] ), RVC_Variance[variable] = "hard_cluster_is_C1" )
+		formatString: 0.0%
+		displayFolder: Region vs country
+		lineageTag: 40ce3cbc-4c72-4eaa-ac72-37c9837cd865
+
+	measure 'Country share of movement' = CALCULATE ( AVERAGE ( RVC_Variance[eta2] ), RVC_Variance[variable] = "convergence_index" )
+		formatString: 0.0%
+		displayFolder: Region vs country
+		lineageTag: 4cb07839-d81c-43d9-9b19-de9986b0cc7d
+
+	measure 'RVC country share' = AVERAGE ( RVC_Variance[eta2] )
+		formatString: 0.0%
+		displayFolder: Region vs country
+		lineageTag: 82326f81-416f-46f6-ac9a-eb7550c7fe5b
+
+	measure 'RVC within share' = AVERAGE ( RVC_Variance[within_share] )
+		formatString: 0.0%
+		displayFolder: Region vs country
+		lineageTag: f9778fb2-cee4-4068-a432-952c1a6ea6d4
+
+	measure 'Nearest region abroad' = CALCULATE ( COUNTROWS ( RVC_Region ), KEEPFILTERS ( RVC_Region[nn1_is_foreign] = TRUE () ) ) + 0
+		formatString: 0
+		displayFolder: Region vs country
+		lineageTag: 1d503de9-f210-4c02-af5d-5745df472408
+
+	measure 'Nearest region abroad (share)' = DIVIDE ( [Nearest region abroad], COUNTROWS ( RVC_Region ) )
+		formatString: 0.0%
+		displayFolder: Region vs country
+		lineageTag: ceb60bda-6990-41a7-b743-200925406635
+
+	measure 'Differs from country majority' = CALCULATE ( COUNTROWS ( RVC_Region ), KEEPFILTERS ( RVC_Region[differs_from_country_majority] = TRUE () ) ) + 0
+		formatString: 0
+		displayFolder: Region vs country
+		lineageTag: a37b8d95-9119-4522-9999-93006ad2e3f9
+
+	measure 'Most similar region (text)' =
+			IF (
+			    HASONEVALUE ( Dim_Region[region_id] ),
+			    VAR nn = SELECTEDVALUE ( RVC_Region[nn1_region_id] )
+			    VAR nm = LOOKUPVALUE ( Dim_Region[region_label], Dim_Region[region_id], nn )
+			    VAR cc = SELECTEDVALUE ( RVC_Region[nn1_country_code] )
+			    VAR cn = LOOKUPVALUE ( Dim_Country[country_name], Dim_Country[code], cc )
+			    VAR ab = SELECTEDVALUE ( RVC_Region[nn1_is_foreign] )
+			    RETURN nm & " (" & cn & ")" & IF ( ab, " · abroad", " · same country" ),
+			    "—"
+			)
+		displayFolder: Text
+		lineageTag: 2c3ca02c-7383-41a1-b849-78e64cfa4bae
+
+	column region_id
+		dataType: string
+		lineageTag: 6be06ae1-fe35-4727-9907-63383b94c9a7
+		summarizeBy: none
+		sourceColumn: region_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column code
+		dataType: string
+		lineageTag: 2feba84b-28af-478d-ab5e-49ddca325be2
+		summarizeBy: none
+		sourceColumn: code
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_code
+		dataType: string
+		lineageTag: 00a844d8-3de3-4148-ba4e-b483067455b4
+		summarizeBy: none
+		sourceColumn: geo_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_name
+		dataType: string
+		lineageTag: fb89727f-05e9-4252-a02a-61b2875f2d88
+		summarizeBy: none
+		sourceColumn: geo_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column hard_cluster
+		dataType: int64
+		formatString: 0
+		lineageTag: 895d6127-e786-444f-bdcc-9ec9e1139f05
+		summarizeBy: sum
+		sourceColumn: hard_cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column max_membership
+		dataType: double
+		lineageTag: 10fc9323-a8a3-4f35-92d2-cb0c34626205
+		summarizeBy: sum
+		sourceColumn: max_membership
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column membership_margin
+		dataType: double
+		lineageTag: fab76546-50aa-499e-bd5b-0f6b2f0e6102
+		summarizeBy: sum
+		sourceColumn: membership_margin
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column convergence_index
+		dataType: double
+		lineageTag: 63da411b-83f2-4b7a-ad76-5abc31156783
+		summarizeBy: sum
+		sourceColumn: convergence_index
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column converged_toward_destination
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 1aad0960-5deb-4fb4-8f21-3cda85046527
+		summarizeBy: none
+		sourceColumn: converged_toward_destination
+
+		annotation SummarizationSetBy = Automatic
+
+	column moved_away_from_destination
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 8433ef9c-0940-4d18-9aa9-f33554fc6e45
+		summarizeBy: none
+		sourceColumn: moved_away_from_destination
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Fact_Region = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Fact_Region", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Colunas selecionadas" = Table.SelectColumns(#"Cabeçalhos promovidos", {"region_id", "code", "geo_code", "geo_name", "hard_cluster", "max_membership", "membership_margin", "convergence_index", "converged_toward_destination", "moved_away_from_destination"}),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Colunas selecionadas", {{"region_id", type text}, {"code", type text}, {"geo_code", type text}, {"geo_name", type text}, {"hard_cluster", Int64.Type}, {"max_membership", type number}, {"membership_margin", type number}, {"convergence_index", type number}, {"converged_toward_destination", type logical}, {"moved_away_from_destination", type logical}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

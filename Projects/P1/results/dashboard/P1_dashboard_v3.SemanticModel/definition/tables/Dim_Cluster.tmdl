@@ -1,0 +1,101 @@
+table Dim_Cluster
+	lineageTag: 09a1c0da-902e-4a1d-b95d-5bb66bd992f4
+
+	column cluster
+		dataType: int64
+		formatString: 0
+		lineageTag: 642ed139-91bc-4ca1-b39d-49ec2f7149a4
+		summarizeBy: sum
+		sourceColumn: cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column cluster_label
+		dataType: string
+		lineageTag: 247f68aa-82a1-43db-aa9d-9da7260a004f
+		summarizeBy: none
+		sourceColumn: cluster_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column alternative_cluster
+		dataType: int64
+		formatString: 0
+		lineageTag: c896aa5e-1f3c-49c6-8da1-e0773b8d06d3
+		summarizeBy: sum
+		sourceColumn: alternative_cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column alternative_cluster_label
+		dataType: string
+		lineageTag: 7cbeddc3-16ba-4e8d-8f99-eb53391a511e
+		summarizeBy: none
+		sourceColumn: alternative_cluster_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column directional_flow
+		dataType: string
+		lineageTag: 949c7c57-2dc5-4a94-a5ce-0d1b4f0423d2
+		summarizeBy: none
+		sourceColumn: directional_flow
+
+		annotation SummarizationSetBy = Automatic
+
+	column medoid_region_id
+		dataType: string
+		lineageTag: 850e97e1-6621-4050-ad29-3f012c5aef7f
+		summarizeBy: none
+		sourceColumn: medoid_region_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column medoid_country_code
+		dataType: string
+		lineageTag: b9889ac8-c658-43d7-ba72-229f1a6e8e6b
+		summarizeBy: none
+		sourceColumn: medoid_country_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column medoid_geo_code
+		dataType: string
+		lineageTag: 93fb1f3e-42dd-4773-80a0-39c80e681924
+		summarizeBy: none
+		sourceColumn: medoid_geo_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column medoid_geo_name
+		dataType: string
+		lineageTag: f8a40a53-9992-448a-b532-add2147f50ea
+		summarizeBy: none
+		sourceColumn: medoid_geo_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column cluster_sort
+		dataType: int64
+		formatString: 0
+		lineageTag: cba86219-6cdf-4bcc-9706-2f8826e545e6
+		summarizeBy: sum
+		sourceColumn: cluster_sort
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_Cluster = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Dim_Cluster", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"cluster", Int64.Type}, {"cluster_label", type text}, {"alternative_cluster", Int64.Type}, {"alternative_cluster_label", type text}, {"directional_flow", type text}, {"medoid_region_id", type text}, {"medoid_country_code", type text}, {"medoid_geo_code", type text}, {"medoid_geo_name", type text}, {"cluster_sort", Int64.Type}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

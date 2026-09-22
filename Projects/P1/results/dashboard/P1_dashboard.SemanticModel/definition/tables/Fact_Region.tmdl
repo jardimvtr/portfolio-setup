@@ -1,0 +1,852 @@
+table Fact_Region
+	lineageTag: 38755417-83eb-4cf3-a80d-e3fa1a3e297e
+
+	measure Regions = DISTINCTCOUNT('Fact_Region'[region_id])
+		formatString: 0
+		displayFolder: Core
+		lineageTag: 9cb3c7f4-3ed7-4b73-a326-033a6cf61a27
+
+	measure Countries = DISTINCTCOUNT('Fact_Region'[code])
+		formatString: 0
+		displayFolder: Core
+		lineageTag: b67cf425-0e8d-4376-94d7-d0fc25c82373
+
+	measure 'Fuzzy transition regions' = CALCULATE(DISTINCTCOUNT('Fact_Region'[region_id]), 'Fact_Region'[transition_zone] = TRUE())
+		formatString: 0
+		displayFolder: Fuzzy
+		lineageTag: 892c3219-285b-4688-9930-cac0478e27aa
+
+	measure 'Fuzzy transition share' = DIVIDE(CALCULATE(DISTINCTCOUNT('Fact_Region'[region_id]), 'Fact_Region'[transition_zone] = TRUE()), DISTINCTCOUNT('Fact_Region'[region_id]))
+		formatString: 0.0%
+		displayFolder: Fuzzy
+		lineageTag: 1f9b7f7b-a293-46cb-936a-4a71a1f9ac07
+
+	measure 'Converging regions' = CALCULATE(DISTINCTCOUNT('Fact_Region'[region_id]), 'Fact_Region'[converged_toward_destination] = TRUE())
+		formatString: 0
+		displayFolder: Convergence
+		lineageTag: a401738f-df3d-47df-a2df-7dd11137e90c
+
+	measure 'Converging share' = DIVIDE(CALCULATE(DISTINCTCOUNT('Fact_Region'[region_id]), 'Fact_Region'[converged_toward_destination] = TRUE()), DISTINCTCOUNT('Fact_Region'[region_id]))
+		formatString: 0.0%
+		displayFolder: Convergence
+		lineageTag: c12fae80-4c65-4d8a-b5f7-7314575ecdaa
+
+	measure 'Mean max membership' = AVERAGE('Fact_Region'[max_membership])
+		formatString: 0.000
+		displayFolder: Fuzzy
+		lineageTag: 960a3091-3371-4b75-adab-1aa3b5464e7f
+
+	measure 'Mean membership margin' = AVERAGE('Fact_Region'[membership_margin])
+		formatString: 0.000
+		displayFolder: Fuzzy
+		lineageTag: 4e34185e-2849-4720-9a34-48798c53f204
+
+	measure 'Mean convergence index' = AVERAGE('Fact_Region'[convergence_index])
+		formatString: 0.0000
+		displayFolder: Convergence
+		lineageTag: ec6a4a05-8edc-4afe-a8d5-9c217154238f
+
+	measure 'Median convergence index' = MEDIAN('Fact_Region'[convergence_index])
+		formatString: 0.0000
+		displayFolder: Convergence
+		lineageTag: d6e42e46-856d-4b41-8683-5204d6dbbd7b
+
+	measure 'Selected median contribution' = MAX('Conv_Indicator'[median_contribution])
+		formatString: 0.0000
+		displayFolder: Convergence contribution
+		lineageTag: 10336fc1-279d-44f6-9c14-d024fc5d2053
+
+	measure 'Selected mean contribution' = MAX('Conv_Indicator'[mean_contribution])
+		formatString: 0.0000
+		displayFolder: Convergence contribution
+		lineageTag: 47a149d5-4c24-473d-8d1d-116965935c1e
+
+	measure 'Selected consistency pct' = MAX('Conv_Indicator'[consistency_pct])
+		formatString: 0.0
+		displayFolder: Convergence contribution
+		lineageTag: e9b204c8-b57a-4e8d-920a-67a08587924a
+
+	measure 'Selected flow converging regions' = MAX('Conv_Flow'[regions_converging_toward_destination])
+		formatString: 0
+		displayFolder: Convergence
+		lineageTag: 19f9c0ec-06c7-478b-8702-990f02c43cd3
+
+	measure 'Selected flow converging share' = MAX('Conv_Flow'[share_converging_toward_destination])
+		formatString: 0.0%
+		displayFolder: Convergence
+		lineageTag: 9ed816ce-1d39-4664-b2dc-614665b5c6e4
+
+	measure 'Own-country nearest regions' = CALCULATE(DISTINCTCOUNT('Fact_Region'[region_id]), 'Fact_Region'[nearest_reference_is_own_country] = TRUE())
+		formatString: 0
+		displayFolder: Country reference
+		lineageTag: 5c8a375b-021a-4050-9a48-d2b21ae08e16
+
+	measure 'C1 regions (clear)' = CALCULATE ( [Regions], KEEPFILTERS ( Dim_Region[display_class] = "C1" ) ) + 0
+		formatString: 0
+		displayFolder: Dashboard\Composition
+		lineageTag: 522ee54a-0a8d-5486-a83b-3658d46fc141
+
+	measure 'C2 regions (clear)' = CALCULATE ( [Regions], KEEPFILTERS ( Dim_Region[display_class] = "C2" ) ) + 0
+		formatString: 0
+		displayFolder: Dashboard\Composition
+		lineageTag: 5de4328b-da65-5372-ab5b-16cef1b32b58
+
+	measure 'Transition regions (display)' = CALCULATE ( [Regions], KEEPFILTERS ( Dim_Region[display_class] = "Transition" ) ) + 0
+		formatString: 0
+		displayFolder: Dashboard\Composition
+		lineageTag: 43a87997-0722-5ad1-a789-838f67737d50
+
+	measure 'Share assigned to C1' = DIVIDE ( CALCULATE ( [Regions], KEEPFILTERS ( Fact_Region[hard_cluster] = 1 ) ), [Regions] )
+		formatString: 0%
+		displayFolder: Dashboard\Composition
+		lineageTag: 253f7718-cf0f-5433-9d22-4fc699e7df3d
+
+	measure 'Profiles present' = CALCULATE ( DISTINCTCOUNT ( Fact_Region[hard_cluster] ) )
+		formatString: 0
+		displayFolder: Dashboard\Composition
+		lineageTag: 7aad3f08-3e7a-5dfd-a18a-b3ec373e3e70
+
+	measure 'Map colour' =
+			SWITCH (
+			    SELECTEDVALUE ( Dim_Region[display_class] ),
+			    "C1", "#2F6690",
+			    "C2", "#D39B2A",
+			    "Transition", "#8E2C48",
+			    "#D5DCE3"
+			)
+		displayFolder: Dashboard\Formatting
+		lineageTag: b6c7e720-72c2-5ea9-a1ca-704e4ee87dea
+
+	measure 'Scope label' =
+			VAR n = FORMAT ( [Regions], "0" )
+			RETURN
+			    IF (
+			        HASONEVALUE ( Dim_Country[country_name] ),
+			        SELECTEDVALUE ( Dim_Country[country_name] ) & " · " & n & " regions",
+			        "All countries · " & n & " regions"
+			    )
+		displayFolder: Dashboard\Text
+		lineageTag: c4d78d2d-33f9-5a6f-8482-f2f5744c2d18
+
+	measure 'Selected region title' =
+			IF (
+			    HASONEVALUE ( Dim_Region[region_id] ),
+			    SELECTEDVALUE ( Dim_Region[region_label] ) & " · " & SELECTEDVALUE ( Dim_Region[country_name] ),
+			    "Selected region · click a region on the map"
+			)
+		displayFolder: Dashboard\Text
+		lineageTag: 0582938a-747b-552d-b539-1d34a3de44ce
+
+	measure 'Selected region profile' =
+			IF (
+			    HASONEVALUE ( Dim_Region[region_id] ),
+			    VAR cls = SELECTEDVALUE ( Dim_Region[display_class] )
+			    VAR hc = SELECTEDVALUE ( Fact_Region[hard_cluster] )
+			    RETURN
+			        IF (
+			            cls = "Transition",
+			            "C" & hc & " (TZ)",
+			            cls
+			        ),
+			    "—"
+			)
+		displayFolder: Dashboard\Text
+		lineageTag: d155536c-acfc-5298-b4e8-93951774b542
+
+	measure 'Selected region closest country' =
+			
+			IF (
+			    HASONEVALUE ( Dim_Region[region_id] ),
+			
+			    VAR nearest_code =
+			        SELECTEDVALUE ( Fact_Region[nearest_reference_country_code] )
+			
+			    VAR nearest_country =
+			        LOOKUPVALUE (
+			            Dim_Country[country_name],
+			            Dim_Country[code],
+			            nearest_code
+			        )
+			
+			    RETURN
+			        COALESCE ( nearest_country, "—" ),
+			
+			    "—"
+			)
+		displayFolder: Dashboard\Text
+		lineageTag: 4c230dbe-f7f6-5a37-b118-85014f30f530
+
+	measure 'Selected region own country rank' =
+			
+			IF (
+			    HASONEVALUE ( Dim_Region[region_id] ),
+			
+			    VAR rk =
+			        SELECTEDVALUE ( Fact_Region[own_country_rank] )
+			
+			    RETURN
+			        IF (
+			            NOT ISBLANK ( rk ),
+			            "#" & FORMAT ( rk, "0" ),
+			            "—"
+			        ),
+			
+			    "—"
+			)
+		displayFolder: Dashboard\Text
+		lineageTag: 8c266a86-76b0-564c-82e0-6efacd30f33e
+
+	measure 'Membership C1' = AVERAGE ( Fact_Region[u_cluster_1] )
+		formatString: 0%
+		displayFolder: Dashboard\Membership
+		lineageTag: 83c8c1fd-8670-5375-a847-8c9a3887722a
+
+	measure 'Membership C2' = AVERAGE ( Fact_Region[u_cluster_2] )
+		formatString: 0%
+		displayFolder: Dashboard\Membership
+		lineageTag: 9be33e1a-1036-5e9d-8432-c5b2b08035ea
+
+	measure 'Membership title' =
+			IF (
+			    HASONEVALUE ( Dim_Region[region_id] ),
+			    "Degree of association · " & SELECTEDVALUE ( Dim_Region[region_label] ),
+			    "Degree of association · average of " & FORMAT ( [Regions], "0" ) & " regions"
+			)
+		displayFolder: Dashboard\Text
+		lineageTag: d8145e5c-661d-5086-864b-871e1e8ea6c6
+
+	measure 'Profile medoid' =
+			VAR code = SELECTEDVALUE ( Dim_Cluster[medoid_country_code] )
+			RETURN SELECTEDVALUE ( Dim_Cluster[medoid_geo_name] ) & ", " & LOOKUPVALUE ( Dim_Country[country_name], Dim_Country[code], code )
+		displayFolder: Dashboard\Profiles
+		lineageTag: aa40cfad-74d2-58b3-8228-e224e49f7710
+
+	measure 'Profile medoid caption' = "Representative region (medoid): " & [Profile medoid]
+		displayFolder: Dashboard\Profiles
+		lineageTag: 52ab4cca-1968-5ed7-9655-0d3f62128c16
+
+	measure 'Profile regions assigned' = SUM ( Fact_Cluster[hard_cluster_size] )
+		formatString: 0
+		displayFolder: Dashboard\Profiles
+		lineageTag: 47fb6e6b-ac0e-58a4-b69a-88d95c86a948
+
+	measure 'Profile effective size' = SUM ( Fact_Cluster[effective_fuzzy_size] )
+		formatString: 0.0
+		displayFolder: Dashboard\Profiles
+		lineageTag: d2edb405-9e31-52aa-96ff-81b0a7274b23
+
+	measure 'Profile transition regions' = SUM ( Fact_Cluster[fuzzy_transition_regions] )
+		formatString: 0
+		displayFolder: Dashboard\Profiles
+		lineageTag: 1cbb402f-01b9-5040-ae24-eb30ad9d5b80
+
+	measure 'Standardized difference' = AVERAGE ( Feature_Profile[standardized_difference_from_pooled_mean] )
+		formatString: 0.00
+		displayFolder: Dashboard\Profiles
+		lineageTag: e0f725d3-9fd6-51a9-9365-85a98bd7de19
+
+	measure 'Typical value (weighted median)' = AVERAGE ( Feature_Annual[weighted_median] )
+		formatString: 0.000
+		displayFolder: Dashboard\Profiles
+		lineageTag: 3496991e-d0ee-5161-a7c1-d298f207cb94
+
+	measure 'Indicator weight' = CALCULATE ( SUM ( Dim_Indicator[common_weight] ), TREATAS ( VALUES ( Dim_Feature[feature] ), Dim_Indicator[feature] ) )
+		formatString: 0.00
+		displayFolder: Dashboard\Profiles
+		lineageTag: 1a4c74ea-02e8-5313-980a-297498249fed
+
+	measure 'Indicator typical C1' = CALCULATE ( AVERAGE ( Indicator_Profile[profile_median] ), REMOVEFILTERS ( Dim_Cluster ), Indicator_Profile[cluster] = 1, TREATAS ( VALUES ( Dim_Feature[feature] ), Dim_Indicator[feature] ) )
+		formatString: 0.000
+		displayFolder: Dashboard\Profiles
+		lineageTag: 69345af0-2631-561a-b7a8-0d91bf329332
+
+	measure 'Indicator typical C2' = CALCULATE ( AVERAGE ( Indicator_Profile[profile_median] ), REMOVEFILTERS ( Dim_Cluster ), Indicator_Profile[cluster] = 2, TREATAS ( VALUES ( Dim_Feature[feature] ), Dim_Indicator[feature] ) )
+		formatString: 0.000
+		displayFolder: Dashboard\Profiles
+		lineageTag: 1f78f6c0-db2c-54df-9611-3d296d7d9f08
+
+	measure 'C1 typical value' = CALCULATE ( AVERAGE ( Feature_Profile[weighted_median_2015_2019] ), REMOVEFILTERS ( Dim_Cluster ), Feature_Profile[cluster] = 1 )
+		formatString: 0.000
+		displayFolder: Dashboard\Profiles
+		lineageTag: 5f5f94f0-19d0-5e0c-a01e-2b63372ad257
+
+	measure 'C2 typical value' = CALCULATE ( AVERAGE ( Feature_Profile[weighted_median_2015_2019] ), REMOVEFILTERS ( Dim_Cluster ), Feature_Profile[cluster] = 2 )
+		formatString: 0.000
+		displayFolder: Dashboard\Profiles
+		lineageTag: d57dda43-114f-5106-99ac-d7a6b53558ae
+
+	measure 'Region value 2015-2019 mean' = AVERAGE ( Region_Year_Feature[feature_value] )
+		formatString: 0.000
+		displayFolder: Dashboard\Profiles
+		lineageTag: 86d970f0-540f-5990-9612-8b3ef1e88032
+
+	measure 'Moved away' = CALCULATE ( [Regions], KEEPFILTERS ( Fact_Region[moved_away_from_destination] = TRUE () ) ) + 0
+		formatString: 0
+		displayFolder: Dashboard\Trajectories
+		lineageTag: 579c419f-f21f-54a9-bac3-f1ca262140e7
+
+	measure 'Formal profile changes' = CALCULATE ( [Regions], KEEPFILTERS ( Fact_Region[formal_cluster_change_2015_2019] = TRUE () ) ) + 0
+		formatString: 0
+		displayFolder: Dashboard\Trajectories
+		lineageTag: 9a42b880-202a-531c-a7c1-83c334f0639f
+
+	measure 'Median relative position' = MEDIAN ( Region_Year_Distance[relative_destination_origin_gap] )
+		formatString: 0.000
+		displayFolder: Dashboard\Trajectories
+		lineageTag: 5bfa7da0-5eb7-5267-a74d-aa1e3639171b
+
+	measure 'Median distance to own profile' = MEDIAN ( Region_Year_Distance[annual_distance_to_origin_medoid] )
+		formatString: 0.0000
+		displayFolder: Dashboard\Trajectories
+		lineageTag: f40121c1-7fba-5a6b-bca6-04ef2f601614
+
+	measure 'Median distance to alternative profile' = MEDIAN ( Region_Year_Distance[annual_distance_to_destination_medoid] )
+		formatString: 0.0000
+		displayFolder: Dashboard\Trajectories
+		lineageTag: 9e625749-c282-5088-913b-4d47752ecefe
+
+	measure 'Indicator consistency' = DIVIDE ( AVERAGE ( Conv_Indicator[consistency_pct] ), 100 )
+		formatString: 0%
+		displayFolder: Dashboard\Trajectories
+		lineageTag: 91f38b51-830b-54a0-9778-d35370c017a9
+
+	measure 'Indicator median contribution' = AVERAGE ( Conv_Indicator[median_contribution] )
+		formatString: 0.000
+		displayFolder: Dashboard\Trajectories
+		lineageTag: d1ae33d3-4283-5773-9dce-42d0d9e763f3
+
+	measure 'Countries with both profiles' = COUNTROWS ( FILTER ( VALUES ( Dim_Country[code] ), [Profiles present] = 2 ) ) + 0
+		formatString: 0
+		displayFolder: Dashboard\Country context
+		lineageTag: e350af22-8c45-53ac-af64-351853c95db2
+
+	measure 'Viable local models' = CALCULATE ( COUNTROWS ( Global_Local_Country ), KEEPFILTERS ( Global_Local_Country[country_model_status] = "SUCCESS" ) ) + 0
+		formatString: 0
+		displayFolder: Dashboard\Country context
+		lineageTag: 32fb828e-39b4-5ccd-b561-39368e8ab5e2
+
+	measure 'Own-country closest share' = DIVIDE ( [Own-country nearest regions], [Regions] )
+		formatString: 0%
+		displayFolder: Dashboard\Country context
+		lineageTag: fed0cd0f-a355-56bd-a161-7cfa4579d829
+
+	measure 'Local model (display)' =
+			SWITCH (
+			    SELECTEDVALUE ( Global_Local_Country[country_model_status] ),
+			    "SUCCESS", SELECTEDVALUE ( Global_Local_Country[country_selected_c] ) & " local groups",
+			    "SKIPPED_TOO_SMALL", "Not estimated · too few regions",
+			    "SKIPPED_NO_VIABLE_PARTITION", "No viable partition",
+			    BLANK ()
+			)
+		displayFolder: Dashboard\Country context
+		lineageTag: 35ead536-e0c0-54fa-818c-c808455e3b0a
+
+	measure 'Agreement (display)' =
+			VAR ok = SELECTEDVALUE ( Global_Local_Country[country_model_status] ) = "SUCCESS"
+			VAR ari = AVERAGE ( Global_Local_Country[ari_global_vs_local] )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        NOT HASONEVALUE ( Dim_Country[code] ), BLANK (),
+			        NOT ok, "—",
+			        [Profiles present] = 1, "n/a · single global profile",
+			        "ARI " & FORMAT ( ari, "0.00", "en-US" )
+			    )
+		displayFolder: Dashboard\Country context
+		lineageTag: 6372a786-aa9a-5ecd-be17-31c411a19962
+
+	measure 'Median distance to reference' = MEDIAN ( Region_Country_Ref[mean_annual_distance_2015_2019] )
+		formatString: 0.0000
+		displayFolder: Dashboard\Country context
+		lineageTag: 579b39ef-0a56-5a12-9f29-47f3aaeb140f
+
+	measure 'Closest references (top 10)' =
+			VAR d = [Median distance to reference]
+			VAR rk =
+			    RANKX (
+			        ALLSELECTED ( Dim_Ref_Country[reference_country_name] ),
+			        [Median distance to reference],
+			        ,
+			        ASC,
+			        Dense
+			    )
+			RETURN IF ( NOT ISBLANK ( d ) && rk <= 10, d )
+		formatString: 0.0000
+		displayFolder: Dashboard\Country context
+		lineageTag: 5a3aea29-78d5-5d69-9fc2-ebaa4b3c4873
+
+	measure 'Reference bar colour' =
+			VAR ownRows = CALCULATE ( COUNTROWS ( Region_Country_Ref ), KEEPFILTERS ( Region_Country_Ref[is_own_country_reference] = TRUE () ) )
+			VAR focused = HASONEVALUE ( Dim_Country[code] ) || HASONEVALUE ( Dim_Region[region_id] )
+			RETURN IF ( focused && ownRows > 0, "#14212E", "#AAB6C2" )
+		displayFolder: Dashboard\Formatting
+		lineageTag: 0b8ca769-e0d6-5d96-95e3-204a38a4d7b5
+
+	measure 'Reference chart title' =
+			
+			SWITCH (
+			    TRUE (),
+			    HASONEVALUE ( Dim_Region[region_id] ), "Closest country references · " & SELECTEDVALUE ( Dim_Region[region_label] ),
+			    HASONEVALUE ( Dim_Country[code] ), "Which countries do regions of " & SELECTEDVALUE ( Dim_Country[country_name] ) & " most resemble?",
+			    "Closest references"
+			)
+		displayFolder: Dashboard\Text
+		lineageTag: 9e4a755f-7a5f-59d8-98ef-51358c4be7e4
+
+	measure 'Profile mix bar (SVG)' =
+			VAR n = [Regions]
+			VAR w1 = INT ( DIVIDE ( [C1 regions (clear)], n ) * 1000 )
+			VAR wt = INT ( DIVIDE ( [Transition regions (display)], n ) * 1000 )
+			VAR w2 = INT ( DIVIDE ( [C2 regions (clear)], n ) * 1000 )
+			RETURN
+			    IF (
+			        n > 0,
+			        "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 100' preserveAspectRatio='none'>"
+			            & "<rect x='0' y='20' width='1000' height='60' fill='%23EEF2F6'/>"
+			            & "<rect x='0' y='20' width='" & w1 & "' height='60' fill='%232F6690'/>"
+			            & "<rect x='" & w1 & "' y='20' width='" & wt & "' height='60' fill='%238E2C48'/>"
+			            & "<rect x='" & ( w1 + wt ) & "' y='20' width='" & w2 & "' height='60' fill='%23D39B2A'/>"
+			            & "</svg>"
+			    )
+		displayFolder: Dashboard\Formatting
+		lineageTag: 9c122f7d-9d29-55a9-91ed-718e13591be3
+		dataCategory: ImageUrl
+
+	column region_id
+		dataType: string
+		lineageTag: f8ecb1e6-a8e4-4f46-861e-d0514734f48a
+		summarizeBy: none
+		sourceColumn: region_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column code
+		dataType: string
+		lineageTag: 429c1a4b-8e5c-41b1-a0ca-7d2217d56aa6
+		summarizeBy: none
+		sourceColumn: code
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_code
+		dataType: string
+		lineageTag: 591c9db9-e5b4-43f6-8b5a-6a9511f09c39
+		summarizeBy: none
+		sourceColumn: geo_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_name
+		dataType: string
+		lineageTag: 6ebc2bfb-b572-4325-8ce1-4ced6fde2319
+		summarizeBy: none
+		sourceColumn: geo_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column bod_environmental_risk
+		dataType: double
+		lineageTag: 87eded12-a8b7-4d7f-9d5e-24681106e036
+		summarizeBy: sum
+		sourceColumn: bod_environmental_risk
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column built_area_share_2015_norm
+		dataType: double
+		lineageTag: 6c6a15a6-2544-4a79-a338-db313976c494
+		summarizeBy: sum
+		sourceColumn: built_area_share_2015_norm
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column ghs_urban_pop_share_norm
+		dataType: double
+		lineageTag: 57c072ec-08a1-4494-8688-36b10fb79028
+		summarizeBy: sum
+		sourceColumn: ghs_urban_pop_share_norm
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column ghs_urban_centre_pop_share_norm
+		dataType: double
+		lineageTag: a520cf3c-b682-46a2-b8b6-3c7d1edf565f
+		summarizeBy: sum
+		sourceColumn: ghs_urban_centre_pop_share_norm
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column hard_cluster
+		dataType: int64
+		formatString: 0
+		lineageTag: ba0cab22-da76-4317-b705-55e819842675
+		summarizeBy: sum
+		sourceColumn: hard_cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column max_membership
+		dataType: double
+		lineageTag: c4ac56c9-cbeb-49f9-89a6-4db94f5b3088
+		summarizeBy: sum
+		sourceColumn: max_membership
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column second_membership
+		dataType: double
+		lineageTag: ec578705-a44d-4808-ab4a-1dabd5381850
+		summarizeBy: sum
+		sourceColumn: second_membership
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column membership_margin
+		dataType: double
+		lineageTag: 6016c115-e5f4-4cae-a393-55b4490e3a29
+		summarizeBy: sum
+		sourceColumn: membership_margin
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column membership_entropy_normalized
+		dataType: double
+		lineageTag: 13541ba2-8ff6-4b32-b560-02ee9aaa31dd
+		summarizeBy: sum
+		sourceColumn: membership_entropy_normalized
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column u_cluster_1
+		dataType: double
+		lineageTag: 05b7fe21-c170-4682-9821-12bdb50486de
+		summarizeBy: sum
+		sourceColumn: u_cluster_1
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column u_cluster_2
+		dataType: double
+		lineageTag: 1c18120e-0d03-41a1-b7f1-923defb464f5
+		summarizeBy: sum
+		sourceColumn: u_cluster_2
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column destination_cluster
+		dataType: int64
+		formatString: 0
+		lineageTag: 3eb3e3ff-bc4a-41c1-84fe-b87e3e7b7a56
+		summarizeBy: sum
+		sourceColumn: destination_cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column flow
+		dataType: string
+		lineageTag: 6640acc3-f256-4cd1-9299-b9583732f85a
+		summarizeBy: none
+		sourceColumn: flow
+
+		annotation SummarizationSetBy = Automatic
+
+	column relative_gap_2015
+		dataType: double
+		lineageTag: 991e7c90-7f2a-4bbc-8d6d-bbeb891c28e2
+		summarizeBy: sum
+		sourceColumn: relative_gap_2015
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column relative_gap_2019
+		dataType: double
+		lineageTag: df6f7d65-2e06-4f54-9bf7-5cdbd9c4ba78
+		summarizeBy: sum
+		sourceColumn: relative_gap_2019
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column convergence_index
+		dataType: double
+		lineageTag: fef91501-0ae5-4e3f-87a4-5ed76d6e07cf
+		summarizeBy: sum
+		sourceColumn: convergence_index
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column no_direction_within_numeric_tolerance
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 269cd503-e1ab-4ec1-ae6e-6b5b57581f51
+		summarizeBy: none
+		sourceColumn: no_direction_within_numeric_tolerance
+
+		annotation SummarizationSetBy = Automatic
+
+	column converged_toward_destination
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 3a13e0d5-3073-441f-976c-533c2faac3c2
+		summarizeBy: none
+		sourceColumn: converged_toward_destination
+
+		annotation SummarizationSetBy = Automatic
+
+	column moved_away_from_destination
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: cb441373-0f34-4d34-9281-b7a096fd664a
+		summarizeBy: none
+		sourceColumn: moved_away_from_destination
+
+		annotation SummarizationSetBy = Automatic
+
+	column own_country_distance
+		dataType: double
+		lineageTag: 9fbaf06f-30de-44f0-a34d-d62b28bc3069
+		summarizeBy: sum
+		sourceColumn: own_country_distance
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column own_country_rank
+		dataType: int64
+		formatString: 0
+		lineageTag: a75f9e13-2fa9-43d4-8e47-f0d460018958
+		summarizeBy: sum
+		sourceColumn: own_country_rank
+
+		annotation SummarizationSetBy = Automatic
+
+	column own_country_reference_method
+		dataType: string
+		lineageTag: b29ee7cf-1621-4e4f-a5e4-9cf2729030cc
+		summarizeBy: none
+		sourceColumn: own_country_reference_method
+
+		annotation SummarizationSetBy = Automatic
+
+	column own_country_reference_regions
+		dataType: int64
+		formatString: 0
+		lineageTag: 7a0db6ff-6fb4-4a46-a252-593237fd8bc1
+		summarizeBy: sum
+		sourceColumn: own_country_reference_regions
+
+		annotation SummarizationSetBy = Automatic
+
+	column nearest_other_country_code
+		dataType: string
+		lineageTag: eda4f2d0-ef0d-4de3-ba32-a60a6ebf0eca
+		summarizeBy: none
+		sourceColumn: nearest_other_country_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column nearest_other_country_distance
+		dataType: double
+		lineageTag: dc714067-58e2-4dfe-b810-689543a9bb66
+		summarizeBy: sum
+		sourceColumn: nearest_other_country_distance
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column nearest_reference_country_code
+		dataType: string
+		lineageTag: 7814782d-10fa-41ab-834f-d957c7ac2daf
+		summarizeBy: none
+		sourceColumn: nearest_reference_country_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column nearest_reference_is_own_country
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 0c660f47-530a-4899-ae46-48398c8aaa4d
+		summarizeBy: none
+		sourceColumn: nearest_reference_is_own_country
+
+		annotation SummarizationSetBy = Automatic
+
+	column nearest_reference_distance
+		dataType: double
+		lineageTag: 8bda1d35-f98b-4be1-a9de-2a2c38556619
+		summarizeBy: sum
+		sourceColumn: nearest_reference_distance
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column own_minus_nearest_other_distance
+		dataType: double
+		lineageTag: 24f73922-f8b8-4bb4-b854-f92d96512679
+		summarizeBy: sum
+		sourceColumn: own_minus_nearest_other_distance
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column country_model_status
+		dataType: string
+		lineageTag: b9053bcb-f55b-41db-81f3-443cdd6627f6
+		summarizeBy: none
+		sourceColumn: country_model_status
+
+		annotation SummarizationSetBy = Automatic
+
+	column country_selected_c
+		dataType: int64
+		formatString: 0
+		lineageTag: e94bfb41-0a10-4bee-9193-3698b0e6c5fd
+		summarizeBy: sum
+		sourceColumn: country_selected_c
+
+		annotation SummarizationSetBy = Automatic
+
+	column local_status
+		dataType: string
+		lineageTag: 2c77881f-b79b-479c-938d-f7b1f1e86939
+		summarizeBy: none
+		sourceColumn: local_status
+
+		annotation SummarizationSetBy = Automatic
+
+	column local_c
+		dataType: int64
+		formatString: 0
+		lineageTag: ca178510-fc82-443c-a5a8-003f9ba87c4b
+		summarizeBy: sum
+		sourceColumn: local_c
+
+		annotation SummarizationSetBy = Automatic
+
+	column local_hard_cluster
+		dataType: int64
+		formatString: 0
+		lineageTag: aaa98fe7-80c1-4ac0-99ea-022f16595be3
+		summarizeBy: sum
+		sourceColumn: local_hard_cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column local_max_membership
+		dataType: double
+		lineageTag: dca9f404-03f5-4128-80ee-d3f4be087541
+		summarizeBy: sum
+		sourceColumn: local_max_membership
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column local_membership_margin
+		dataType: double
+		lineageTag: 6c1d2616-482c-4baf-a6c6-de32ddaf09d0
+		summarizeBy: sum
+		sourceColumn: local_membership_margin
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column local_membership_entropy
+		dataType: double
+		lineageTag: 1162892c-300b-4c3d-8918-8ff430a38562
+		summarizeBy: sum
+		sourceColumn: local_membership_entropy
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column local_transition_zone
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 4112dd8b-837a-4f92-a6b1-ad6b2d62ac33
+		summarizeBy: none
+		sourceColumn: local_transition_zone
+
+		annotation SummarizationSetBy = Automatic
+
+	column transition_zone
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 87494954-652f-44b2-9af4-afbfdd08e851
+		summarizeBy: none
+		sourceColumn: transition_zone
+
+		annotation SummarizationSetBy = Automatic
+
+	column structural_context_used_in_clustering
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: f1907d72-cca0-448b-8084-630d90aa441e
+		summarizeBy: none
+		sourceColumn: structural_context_used_in_clustering
+
+		annotation SummarizationSetBy = Automatic
+
+	column formal_cluster_change_2015_2019
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 39ef197f-28cd-4e64-beba-89a437936c96
+		summarizeBy: none
+		sourceColumn: formal_cluster_change_2015_2019
+
+		annotation SummarizationSetBy = Automatic
+
+	column flow_interpretation
+		dataType: string
+		lineageTag: 4a22d2b4-2822-42cd-b3a8-24c570968bdb
+		summarizeBy: none
+		sourceColumn: flow_interpretation
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Fact_Region = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Fact_Region", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"region_id", type text}, {"code", type text}, {"geo_code", type text}, {"geo_name", type text}, {"bod_environmental_risk", type number}, {"built_area_share_2015_norm", type number}, {"ghs_urban_pop_share_norm", type number}, {"ghs_urban_centre_pop_share_norm", type number}, {"hard_cluster", Int64.Type}, {"max_membership", type number}, {"second_membership", type number}, {"membership_margin", type number}, {"membership_entropy_normalized", type number}, {"u_cluster_1", type number}, {"u_cluster_2", type number}, {"destination_cluster", Int64.Type}, {"flow", type text}, {"relative_gap_2015", type number}, {"relative_gap_2019", type number}, {"convergence_index", type number}, {"no_direction_within_numeric_tolerance", type logical}, {"converged_toward_destination", type logical}, {"moved_away_from_destination", type logical}, {"own_country_distance", type number}, {"own_country_rank", Int64.Type}, {"own_country_reference_method", type text}, {"own_country_reference_regions", Int64.Type}, {"nearest_other_country_code", type text}, {"nearest_other_country_distance", type number}, {"nearest_reference_country_code", type text}, {"nearest_reference_is_own_country", type logical}, {"nearest_reference_distance", type number}, {"own_minus_nearest_other_distance", type number}, {"country_model_status", type text}, {"country_selected_c", Int64.Type}, {"local_status", type text}, {"local_c", Int64.Type}, {"local_hard_cluster", Int64.Type}, {"local_max_membership", type number}, {"local_membership_margin", type number}, {"local_membership_entropy", type number}, {"local_transition_zone", type logical}, {"transition_zone", type logical}, {"structural_context_used_in_clustering", type logical}, {"formal_cluster_change_2015_2019", type logical}, {"flow_interpretation", type text}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,85 @@
+table Dim_Flow
+	lineageTag: 9d548425-0e53-4ff1-a2ea-271d1fefe901
+
+	column flow
+		dataType: string
+		lineageTag: efc7d627-9ec3-4904-9f65-7c8c1b6d87a0
+		summarizeBy: none
+		sourceColumn: flow
+
+		annotation SummarizationSetBy = Automatic
+
+	column origin_cluster
+		dataType: int64
+		formatString: 0
+		lineageTag: d8059a90-a82d-4554-8c9b-ec3751494fb0
+		summarizeBy: sum
+		sourceColumn: origin_cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column destination_cluster
+		dataType: int64
+		formatString: 0
+		lineageTag: 7c4563d6-e770-41c6-a0ca-8a22a0eadd07
+		summarizeBy: sum
+		sourceColumn: destination_cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column origin_cluster_label
+		dataType: string
+		lineageTag: 87068e41-e35a-47b6-a56f-5d3702a106d3
+		summarizeBy: none
+		sourceColumn: origin_cluster_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column destination_cluster_label
+		dataType: string
+		lineageTag: 757d9758-0a03-4379-b18f-562822f03b56
+		summarizeBy: none
+		sourceColumn: destination_cluster_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column flow_label
+		dataType: string
+		lineageTag: be15cfc0-0705-461b-82e8-a87be3ce3668
+		summarizeBy: none
+		sourceColumn: flow_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column flow_sort
+		dataType: int64
+		formatString: 0
+		lineageTag: 004bd64b-23f3-462d-bcec-2daa02dfe3bc
+		summarizeBy: sum
+		sourceColumn: flow_sort
+
+		annotation SummarizationSetBy = Automatic
+
+	column interpretation
+		dataType: string
+		lineageTag: d561d058-fecf-4a76-b3e7-6ba70a337df3
+		summarizeBy: none
+		sourceColumn: interpretation
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_Flow = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Dim_Flow", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"flow", type text}, {"origin_cluster", Int64.Type}, {"destination_cluster", Int64.Type}, {"origin_cluster_label", type text}, {"destination_cluster_label", type text}, {"flow_label", type text}, {"flow_sort", Int64.Type}, {"interpretation", type text}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

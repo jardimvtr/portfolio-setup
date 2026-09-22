@@ -1,0 +1,63 @@
+table RVC_Country
+	lineageTag: 04767e2c-cad8-48e5-8277-f6a6d1bf1c3f
+
+	column code
+		dataType: string
+		lineageTag: 3ae55d65-604e-4f76-a9c6-eb0643ade80e
+		summarizeBy: none
+		sourceColumn: code
+
+		annotation SummarizationSetBy = Automatic
+
+	column n_regions
+		dataType: int64
+		formatString: 0
+		lineageTag: 70319a90-0fd1-47d1-8b03-b93632740873
+		summarizeBy: sum
+		sourceColumn: n_regions
+
+		annotation SummarizationSetBy = Automatic
+
+	column mean_foreign_share_k5
+		dataType: double
+		lineageTag: 1a53b227-3e68-4939-9028-618fbbf45911
+		summarizeBy: sum
+		sourceColumn: mean_foreign_share_k5
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column mean_baseline_foreign_share
+		dataType: double
+		lineageTag: 16de6eb5-9c25-4093-822f-d065fab53f81
+		summarizeBy: sum
+		sourceColumn: mean_baseline_foreign_share
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column country_name = LOOKUPVALUE ( Dim_Country[country_name], Dim_Country[code], RVC_Country[code] )
+		displayFolder: Text
+		lineageTag: f9b6a5af-8ef2-43ee-a1f8-c357f4d438a0
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	partition RVC_Country = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.3_region_vs_country.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "RVC_Country", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Colunas selecionadas" = Table.SelectColumns(#"Cabeçalhos promovidos", {"code", "n_regions", "mean_foreign_share_k5", "mean_baseline_foreign_share"}),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Colunas selecionadas", {{"code", type text}, {"n_regions", Int64.Type}, {"mean_foreign_share_k5", type number}, {"mean_baseline_foreign_share", type number}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,44 @@
+table Dim_Year
+	lineageTag: 69ad9b4c-417f-45f3-ad5c-8609cde20bc5
+
+	column year
+		dataType: int64
+		formatString: 0
+		lineageTag: 0d539f04-291b-43a3-a53b-afb66b3f21d5
+		summarizeBy: sum
+		sourceColumn: year
+
+		annotation SummarizationSetBy = Automatic
+
+	column year_label
+		dataType: string
+		lineageTag: 64e9ef91-7356-40bf-9da6-4ff224a6ab01
+		summarizeBy: none
+		sourceColumn: year_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column year_sort
+		dataType: int64
+		formatString: 0
+		lineageTag: 9f740b39-845d-4077-887f-1398f5fc3ef1
+		summarizeBy: sum
+		sourceColumn: year_sort
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_Year = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Dim_Year", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos promovidos",{{"year", Int64.Type}, {"year_label", type text}, {"year_sort", Int64.Type}})
+				in
+				    #"Tipo Alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

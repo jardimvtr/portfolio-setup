@@ -1,0 +1,15 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.1.0/schema.json",
+  "pageOrder": [
+    "p2_profiles",
+    "p1_map",
+    "p1b_spectrum",
+    "p3_trajectories",
+    "p4_country_context",
+    "p5_region_vs_country",
+    "dt_region_profile",
+    "tt_region",
+    "tt_indicators"
+  ],
+  "activePageName": "p4_country_context"
+}

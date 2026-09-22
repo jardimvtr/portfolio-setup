@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-SCRIPT 05 v1.3 — DYNAMIC-ONLY M-Exp-FCMd GLOBAL + INTRACOUNTRY CLUSTERING
+SCRIPT 05 v1.4 — DYNAMIC-ONLY M-Exp-FCMd GLOBAL + INTRACOUNTRY CLUSTERING
 
 Purpose
 -------
@@ -13,9 +13,15 @@ Official P1 design implemented here
 -----------------------------------
 - Analytical period: 2015–2019.
 - Official common sample: 512 subnational regions in 28 countries.
-- Only dynamic variables/families enter clustering.
+- Only the three final dynamic Script-04 features enter clustering:
+  (1) bod_demographic_productive_potential,
+  (2) bod_socioeconomic_deprivation, and
+  (3) ntl_per_capita_norm.
 - Structural/static variables are excluded from Script 05 and from the final
   clustering representation.
+- The variable-level annual BoD decomposition produced by Script 04 is an
+  explanatory/audit layer for Script 06; it is not added as extra clustering
+  dimensions, avoiding double counting of the same family information.
 - M-Exp-FCMd is the only clustering method.
 - No K-means, DTW-FCMd, HMM, GMM, annual clustering, Xie-Beni,
   Partition Coefficient, Partition Entropy, or competing algorithms.
@@ -134,6 +140,19 @@ SCRIPT04_FEATURE_WEIGHTS_INPUT = SCRIPT04_DIR / "04_final_feature_weights.csv"
 EXPECTED_REGIONS = 512
 EXPECTED_COUNTRIES = 28
 EXPECTED_YEARS = [2015, 2016, 2017, 2018, 2019]
+
+# Script-04 v4.1+ frozen dynamic handoff.
+# These are the only trajectories allowed into M-Exp-FCMd.
+EXPECTED_DYNAMIC_FEATURES = (
+    "bod_demographic_productive_potential",
+    "bod_socioeconomic_deprivation",
+    "ntl_per_capita_norm",
+)
+EXPECTED_DYNAMIC_FAMILIES = (
+    "demographic_productive_potential",
+    "socioeconomic_deprivation",
+    "regional_economic_activity_proxy",
+)
 
 C_GRID = tuple(range(2, 7))
 M_GRID = (1.5, 1.8, 2.0, 2.2, 2.5)
@@ -344,7 +363,35 @@ def validate_and_prepare_inputs() -> tuple[
             "No DYNAMIC rows found in Script-04 feature-weight metadata."
         )
 
-    dyn_features = weights["feature"].astype(str).tolist()
+    # Enforce the frozen Script-04 v4.1+ analytical specification.
+    # The check is intentionally strict: if Script 04 changes, Script 05 stops
+    # instead of silently clustering a different feature space.
+    observed_features = weights["feature"].astype(str).tolist()
+    if set(observed_features) != set(EXPECTED_DYNAMIC_FEATURES):
+        raise ValueError(
+            "Unexpected Script-04 dynamic feature set. "
+            f"Expected {list(EXPECTED_DYNAMIC_FEATURES)}, found {observed_features}."
+        )
+
+    observed_families = weights["family"].astype(str).drop_duplicates().tolist()
+    if set(observed_families) != set(EXPECTED_DYNAMIC_FAMILIES):
+        raise ValueError(
+            "Unexpected Script-04 dynamic family set. "
+            f"Expected {list(EXPECTED_DYNAMIC_FAMILIES)}, found {observed_families}."
+        )
+
+    # Canonical order makes outputs deterministic and independent of CSV row order.
+    feature_order = {feature: pos for pos, feature in enumerate(EXPECTED_DYNAMIC_FEATURES)}
+    weights["_feature_order"] = weights["feature"].astype(str).map(feature_order)
+    if weights["_feature_order"].isna().any():
+        raise ValueError("Could not map all Script-04 dynamic features to canonical order.")
+    weights = (
+        weights.sort_values("_feature_order", kind="stable")
+        .drop(columns="_feature_order")
+        .reset_index(drop=True)
+    )
+    dyn_features = list(EXPECTED_DYNAMIC_FEATURES)
+
     missing_dyn_features = [
         f for f in dyn_features if f not in dynamic.columns
     ]
@@ -1671,7 +1718,13 @@ def build_model_metadata(
             "variable_scope",
             "dynamic trajectories only; all structural/static variables excluded from clustering",
         ),
-        ("family_weighting", "Script-04 DYNAMIC family weights; currently equal across dynamic families"),
+        ("dynamic_features", ",".join(EXPECTED_DYNAMIC_FEATURES)),
+        ("dynamic_families", ",".join(EXPECTED_DYNAMIC_FAMILIES)),
+        (
+            "bod_decomposition_role",
+            "Script-04 annual variable-level BoD decomposition retained for explanation/audit only; not additional clustering dimensions",
+        ),
+        ("family_weighting", "Script-04 DYNAMIC family weights; equal across the three final dynamic families"),
         ("within_family_weighting", "Script-04 within-family distance weights"),
         ("robust_transform", "1-exp(-beta*D_base)"),
         ("beta_global", beta),
@@ -1710,7 +1763,7 @@ def main() -> None:
     t0 = time.perf_counter()
     ensure_directories()
 
-    print_header("SCRIPT 05 v1.3 — DYNAMIC-ONLY M-Exp-FCMd")
+    print_header("SCRIPT 05 v1.4 — DYNAMIC-ONLY M-Exp-FCMd")
     print(f"Project root: {ROOT}")
     print(f"Analytical period: {EXPECTED_YEARS[0]}–{EXPECTED_YEARS[-1]}")
     print(f"Official scope: {EXPECTED_REGIONS} regions | {EXPECTED_COUNTRIES} countries")
@@ -1730,6 +1783,14 @@ def main() -> None:
         f"Dynamic handoff: {len(dynamic):,} rows | "
         f"{dynamic['region_id'].nunique()} regions | "
         f"{len(dyn_features)} model features"
+    )
+    print("Dynamic clustering features:")
+    for feature in dyn_features:
+        family = weights.loc[weights["feature"].eq(feature), "family"].iloc[0]
+        print(f"  - {feature} [{family}]")
+    print(
+        "Script-04 BoD annual decomposition remains an explanatory layer and "
+        "is not duplicated as additional clustering dimensions."
     )
     # ------------------------------------------------------------------
     # 2. Dissimilarity
@@ -1907,8 +1968,11 @@ def main() -> None:
         "effective_cluster_sizes": global_fit.effective_sizes.tolist(),
         "dynamic_level_weight": MIX_LEVEL_WEIGHT,
         "dynamic_change_weight": MIX_CHANGE_WEIGHT,
+        "dynamic_features": list(EXPECTED_DYNAMIC_FEATURES),
+        "dynamic_families": list(EXPECTED_DYNAMIC_FAMILIES),
         "c_selection_criterion": "Fuzzy Silhouette only",
         "variable_scope": "dynamic trajectories only",
+        "script04_bod_decomposition_used_as_extra_dimensions": False,
         "structural_static_variables_included": False,
     }
     with open(SELECTED_CONFIGURATION_OUTPUT, "w", encoding="utf-8") as f:

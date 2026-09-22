@@ -1,0 +1,77 @@
+table Region_Year_Feature
+	lineageTag: 2aed3483-bc2d-475a-b571-e8fefb915daa
+
+	column region_id
+		dataType: string
+		lineageTag: 5fcceac5-08dc-40e8-980f-65f4bd39b0c9
+		summarizeBy: none
+		sourceColumn: region_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column code
+		dataType: string
+		lineageTag: c1090cdd-fdbd-4f02-8482-d675a626aee6
+		summarizeBy: none
+		sourceColumn: code
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_code
+		dataType: string
+		lineageTag: d8040b05-74b6-4d45-b7a6-997e5e4cd086
+		summarizeBy: none
+		sourceColumn: geo_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_name
+		dataType: string
+		lineageTag: 3f8162cb-6b28-40de-a5a6-2c0d0cdfb9e2
+		summarizeBy: none
+		sourceColumn: geo_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column year
+		dataType: int64
+		formatString: 0
+		lineageTag: d97a211c-a528-4e52-9af4-4167c80bea4e
+		summarizeBy: sum
+		sourceColumn: year
+
+		annotation SummarizationSetBy = Automatic
+
+	column feature
+		dataType: string
+		lineageTag: 29e6a8c2-6de3-4ab6-8e40-c3f5665f7606
+		summarizeBy: none
+		sourceColumn: feature
+
+		annotation SummarizationSetBy = Automatic
+
+	column feature_value
+		dataType: double
+		lineageTag: a27286db-0fcb-4b70-bc98-0155d5f40b77
+		summarizeBy: sum
+		sourceColumn: feature_value
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Region_Year_Feature = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Region_Year_Feature", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"region_id", type text}, {"code", type text}, {"geo_code", type text}, {"geo_name", type text}, {"year", Int64.Type}, {"feature", type text}, {"feature_value", type number}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

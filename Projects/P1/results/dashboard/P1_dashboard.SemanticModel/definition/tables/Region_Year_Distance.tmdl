@@ -1,0 +1,115 @@
+table Region_Year_Distance
+	lineageTag: 134efbce-7874-4dfc-b380-4853eb3882fd
+
+	column region_id
+		dataType: string
+		lineageTag: 9d73db97-03df-4e71-98e0-dc6380dbda1a
+		summarizeBy: none
+		sourceColumn: region_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column code
+		dataType: string
+		lineageTag: 0eb0c6c6-ee5a-40cd-9a92-9c38e0b34e70
+		summarizeBy: none
+		sourceColumn: code
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_code
+		dataType: string
+		lineageTag: 6dc6dd5a-e4dc-4706-be63-78da12449784
+		summarizeBy: none
+		sourceColumn: geo_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column geo_name
+		dataType: string
+		lineageTag: cfa3900c-65a4-4688-b898-d5821ee1ec41
+		summarizeBy: none
+		sourceColumn: geo_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column year
+		dataType: int64
+		formatString: 0
+		lineageTag: 5c8633fe-f722-46c2-bed4-eee5a6d4465a
+		summarizeBy: sum
+		sourceColumn: year
+
+		annotation SummarizationSetBy = Automatic
+
+	column origin_cluster
+		dataType: int64
+		formatString: 0
+		lineageTag: e94e5a93-4269-4b2a-8808-22de40d17627
+		summarizeBy: sum
+		sourceColumn: origin_cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column destination_cluster
+		dataType: int64
+		formatString: 0
+		lineageTag: eedeb49d-9bcb-4b43-a4ab-56e8fbf1c190
+		summarizeBy: sum
+		sourceColumn: destination_cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column flow
+		dataType: string
+		lineageTag: 01bfebb6-79fc-4b19-ab0c-e738b67da19e
+		summarizeBy: none
+		sourceColumn: flow
+
+		annotation SummarizationSetBy = Automatic
+
+	column annual_distance_to_origin_medoid
+		dataType: double
+		lineageTag: 594f2bf1-4575-4bf2-96b5-37b08ee6dd0d
+		summarizeBy: sum
+		sourceColumn: annual_distance_to_origin_medoid
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column annual_distance_to_destination_medoid
+		dataType: double
+		lineageTag: b4cb866f-6638-4c05-87a4-9d12eaa786c2
+		summarizeBy: sum
+		sourceColumn: annual_distance_to_destination_medoid
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column relative_destination_origin_gap
+		dataType: double
+		lineageTag: a4ac67b4-961a-4bc1-a478-f315e473c398
+		summarizeBy: sum
+		sourceColumn: relative_destination_origin_gap
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Region_Year_Distance = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Region_Year_Distance", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"region_id", type text}, {"code", type text}, {"geo_code", type text}, {"geo_name", type text}, {"year", Int64.Type}, {"origin_cluster", Int64.Type}, {"destination_cluster", Int64.Type}, {"flow", type text}, {"annual_distance_to_origin_medoid", type number}, {"annual_distance_to_destination_medoid", type number}, {"relative_destination_origin_gap", type number}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

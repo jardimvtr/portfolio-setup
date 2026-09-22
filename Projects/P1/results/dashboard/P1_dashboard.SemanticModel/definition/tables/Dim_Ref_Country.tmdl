@@ -1,0 +1,50 @@
+table Dim_Ref_Country
+	lineageTag: cd519328-7c1a-41c7-acc5-a06cccf2a45a
+
+	column reference_country_code
+		dataType: string
+		lineageTag: fbe1db27-bf4a-48dd-a3bc-bb33bd95b66c
+		summarizeBy: none
+		sourceColumn: reference_country_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column reference_country_label
+		dataType: string
+		lineageTag: 8259c6c9-dcfc-4c31-869e-6bb2703cbe31
+		summarizeBy: none
+		sourceColumn: reference_country_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column reference_country_sort
+		dataType: int64
+		formatString: 0
+		lineageTag: 0d5354e7-eaa1-40dc-b7cc-f0bf57b4a6d7
+		summarizeBy: sum
+		sourceColumn: reference_country_sort
+
+		annotation SummarizationSetBy = Automatic
+
+	column reference_country_name = LOOKUPVALUE ( Dim_Country[country_name], Dim_Country[code], Dim_Ref_Country[reference_country_code] )
+		displayFolder: Dashboard
+		lineageTag: b004c0da-8c46-59e6-9822-74d534e6c42f
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_Ref_Country = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Dim_Ref_Country", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"reference_country_code", type text}, {"reference_country_label", type text}, {"reference_country_sort", Int64.Type}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

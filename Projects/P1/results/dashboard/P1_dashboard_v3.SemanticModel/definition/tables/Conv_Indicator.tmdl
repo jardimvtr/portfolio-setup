@@ -1,0 +1,124 @@
+table Conv_Indicator
+	lineageTag: a4e532e6-c5d5-4226-b977-3fc5379d27fb
+
+	column flow
+		dataType: string
+		lineageTag: 9becb42b-f1f8-4ef4-b21d-98756c90f732
+		summarizeBy: none
+		sourceColumn: flow
+
+		annotation SummarizationSetBy = Automatic
+
+	column converging_regions_in_flow
+		dataType: int64
+		formatString: 0
+		lineageTag: aa1c78b0-f0c1-4cbd-a42f-43e53c492baf
+		summarizeBy: sum
+		sourceColumn: converging_regions_in_flow
+
+		annotation SummarizationSetBy = Automatic
+
+	column median_contribution
+		dataType: double
+		lineageTag: 2ff878d1-6215-4094-a4b7-a73f747dd2b3
+		summarizeBy: sum
+		sourceColumn: median_contribution
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column mean_contribution
+		dataType: double
+		lineageTag: 3a7f8d5a-6e0a-4e3d-aac9-046e201ebce7
+		summarizeBy: sum
+		sourceColumn: mean_contribution
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column regions_positive_contribution
+		dataType: int64
+		formatString: 0
+		lineageTag: 4417ebb6-85d6-4ca2-aa60-4e6e8febf845
+		summarizeBy: sum
+		sourceColumn: regions_positive_contribution
+
+		annotation SummarizationSetBy = Automatic
+
+	column consistency_pct
+		dataType: double
+		lineageTag: 274d27ec-bfd4-4ba9-b62c-65dc9f0577ae
+		summarizeBy: sum
+		sourceColumn: consistency_pct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column feature
+		dataType: string
+		lineageTag: 5ff8eb15-1752-41ea-bf65-b162d0e53063
+		summarizeBy: none
+		sourceColumn: feature
+
+		annotation SummarizationSetBy = Automatic
+
+	column family
+		dataType: string
+		lineageTag: 9c7ad9b0-0486-4151-84b0-cdea07c44069
+		summarizeBy: none
+		sourceColumn: family
+
+		annotation SummarizationSetBy = Automatic
+
+	column variable
+		dataType: string
+		lineageTag: fd1dc423-f6b2-4639-ae08-9f99d276943a
+		summarizeBy: none
+		sourceColumn: variable
+
+		annotation SummarizationSetBy = Automatic
+
+	column component_kind
+		dataType: string
+		lineageTag: adf2f976-95d1-49e2-90f8-c4f1f2536706
+		summarizeBy: none
+		sourceColumn: component_kind
+
+		annotation SummarizationSetBy = Automatic
+
+	column common_weight
+		dataType: double
+		lineageTag: c1371240-1c02-4959-92ca-8570ec7d08a6
+		summarizeBy: sum
+		sourceColumn: common_weight
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column aggregation_scope
+		dataType: string
+		lineageTag: f8ff53a4-da5a-4016-b247-2e35021370df
+		summarizeBy: none
+		sourceColumn: aggregation_scope
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Conv_Indicator = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Conv_Indicator", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"flow", type text}, {"converging_regions_in_flow", Int64.Type}, {"median_contribution", type number}, {"mean_contribution", type number}, {"regions_positive_contribution", Int64.Type}, {"consistency_pct", type number}, {"feature", type text}, {"family", type text}, {"variable", type text}, {"component_kind", type text}, {"common_weight", type number}, {"aggregation_scope", type text}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

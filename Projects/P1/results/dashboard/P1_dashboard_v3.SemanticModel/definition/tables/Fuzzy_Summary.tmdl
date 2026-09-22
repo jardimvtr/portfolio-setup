@@ -1,0 +1,124 @@
+table Fuzzy_Summary
+	lineageTag: 1fee6a40-720e-4353-b801-40481b3d1594
+
+	column fuzzy_direction
+		dataType: string
+		lineageTag: 2dbce517-aee3-4d8b-94a1-4d9ce0e98b2b
+		summarizeBy: none
+		sourceColumn: fuzzy_direction
+
+		annotation SummarizationSetBy = Automatic
+
+	column hard_origin_regions
+		dataType: int64
+		formatString: 0
+		lineageTag: 8973c0f0-df59-4724-b1bb-bdd5fe9a9b5a
+		summarizeBy: sum
+		sourceColumn: hard_origin_regions
+
+		annotation SummarizationSetBy = Automatic
+
+	column transition_regions
+		dataType: int64
+		formatString: 0
+		lineageTag: e1a76724-7f9c-4636-950c-27d27211fbc9
+		summarizeBy: sum
+		sourceColumn: transition_regions
+
+		annotation SummarizationSetBy = Automatic
+
+	column transition_share_within_origin
+		dataType: double
+		lineageTag: fec4568e-7029-4692-a3cd-07b7dcc6e592
+		summarizeBy: sum
+		sourceColumn: transition_share_within_origin
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column mean_origin_membership_all
+		dataType: double
+		lineageTag: f7919732-96f2-4ea5-9b0e-b68d9a07656d
+		summarizeBy: sum
+		sourceColumn: mean_origin_membership_all
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column mean_alternative_membership_all
+		dataType: double
+		lineageTag: 5bb314f0-fda0-4e59-a14d-2bb76d67f93e
+		summarizeBy: sum
+		sourceColumn: mean_alternative_membership_all
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column mean_membership_margin_all
+		dataType: double
+		lineageTag: 3632deed-50dc-4e12-9dd7-cc175fa34d7f
+		summarizeBy: sum
+		sourceColumn: mean_membership_margin_all
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column median_membership_margin_all
+		dataType: double
+		lineageTag: 47203af5-a542-490b-bec8-a01dcb2e00c1
+		summarizeBy: sum
+		sourceColumn: median_membership_margin_all
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column mean_entropy_all
+		dataType: double
+		lineageTag: 24ca4841-2a51-4a68-bf39-8aba1555b401
+		summarizeBy: sum
+		sourceColumn: mean_entropy_all
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column mean_origin_membership_transition
+		dataType: double
+		lineageTag: 5fecff9e-82b5-472a-8219-b72fc0dede38
+		summarizeBy: sum
+		sourceColumn: mean_origin_membership_transition
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column mean_alternative_membership_transition
+		dataType: double
+		lineageTag: 83f448a3-3651-4b1c-b90e-73c66c24174c
+		summarizeBy: sum
+		sourceColumn: mean_alternative_membership_transition
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Fuzzy_Summary = m
+		mode: import
+		source =
+				let
+				  Origem = Excel.Workbook(File.Contents("C:\Users\vitor\Documents\Portfolio\Projects\P1\outputs\07.2_powerbi_model.xlsx"), null, true),
+				  #"Navegação 1" = Origem{[Item = "Fuzzy_Summary", Kind = "Sheet"]}[Data],
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(#"Navegação 1", [PromoteAllScalars = true]),
+				  #"Tipo de coluna alterado" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"fuzzy_direction", type text}, {"hard_origin_regions", Int64.Type}, {"transition_regions", Int64.Type}, {"transition_share_within_origin", type number}, {"mean_origin_membership_all", type number}, {"mean_alternative_membership_all", type number}, {"mean_membership_margin_all", type number}, {"median_membership_margin_all", type number}, {"mean_entropy_all", type number}, {"mean_origin_membership_transition", type number}, {"mean_alternative_membership_transition", type number}})
+				in
+				  #"Tipo de coluna alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+
